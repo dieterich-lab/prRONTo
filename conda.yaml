@@ -1,0 +1,13 @@
+name: rrna_pipeline
+channels:
+  - conda-forge
+  - bioconda
+  - piechottam
+dependencies:
+  - snakemake
+  - scikit-learn=0.24.2
+  - pandas
+  - click
+  - samtools
+    #  - jacusa2
+    #- jacusa2helper

@@ -1,0 +1,133 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/dieterich-lab/rrna-pipeline/schemas/config.yaml
+title: rRNA pipeline
+description: Config for pRONTo
+type: object
+properties:
+  pepfile:
+    type: string
+    description: Sample description
+  include:
+    type: object
+    properties:
+      mods:
+        type: string
+        enum: ["link", "copy"]
+      ref:
+        type: string
+        enum: ["link", "copy"]
+      bams:
+        type: string
+        enum: ["link", "copy"]
+    default:
+      mods: link
+      ref: link
+      bams: link
+  preprocess:
+    type: object
+    properties:
+      filter:
+        type: string
+      calmd:
+        type: boolean
+    default:
+      filter: "-F 3328"
+      calmd: true
+  lof:
+    type: object
+    properties:
+      neighbors:
+        type: integer
+        minimum: 1
+      contamination:
+        type: number
+        minimum: 0
+        maximum: 1
+    default:
+      neighbors: 20
+      contamination: 0.002
+  jacusa2:
+    type: object
+    properties:
+      threads:
+        type: integer
+        minimum: 1
+      min_mapq:
+        type: integer
+        minimum: 1
+        maximum: 255
+      min_bq:
+        type: integer
+        minimum: 1
+        maximum: 60
+      min_cov:
+        type: integer
+        minimum: 1
+        maximum: 40
+        default: 4
+      opts:
+        type: string
+      features:
+        type: array
+        items:
+          type: string
+        uniqueItems: true
+        minItems: 1
+        default:
+          - M
+          - MDI
+    default:
+      threads: 1
+      min_mapq: 1
+      min_bq: 1
+      min_cov: 4
+      opts: "-D -i"
+      defaults: ["M", "MDI",]
+  downsampling:
+    type: object
+    properties:
+      seeds:
+        type: array
+        items:
+          type: string
+        uniqueItems: true
+        minItems: 1
+      coverages:
+        type: array
+        items:
+          type: integer
+          minimum: 100
+        uniqueItems: true
+        minItems: 1
+    required:
+      - seeds
+      - coverages
+  mixing:
+    type: object
+    properties:
+      seeds:
+        type: array
+        items:
+          type: string
+        uniqueItems: true
+        minItems: 1
+      coverages:
+        type: array
+        items:
+          type: integer
+          minimum: 100
+        uniqueItems: true
+        minItems: 1
+      mixings:
+        type: array
+        items:
+          type: number
+          minimum: 0
+          maximum: 1
+        uniqueItems: true
+        minItems: 1
+    required:
+      - seeds
+      - coverages
+required:
+  - pepfile

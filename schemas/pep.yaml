@@ -1,0 +1,49 @@
+description: pRONTo PEP schema
+imports:
+  - http://schema.databio.org/pep/2.0.0.yaml
+
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        condition:
+          type: string
+          enum: ["1", "2"]
+        filename:
+          type: string
+      required:
+        - condition
+        - filename
+  config:
+    type: object
+    properties:
+      pronto:
+        type: object
+        properties:
+          output_dir:
+            type: string
+            description: Output directory
+          ref:
+            type: string
+          mods:
+            type: string
+          regions:
+            type: array
+            items:
+              type: string
+            uniqueItems: true
+            minItems: 1
+          targets:
+            type: array
+            items:
+              type: string
+            uniqueItems: true
+        required:
+          - output
+          - ref
+          - mods
+          - regions
+      required:
+        - pronto
