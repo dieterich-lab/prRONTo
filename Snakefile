@@ -6,10 +6,10 @@ pepfile: config["pepfile"]
 pepschema: "schemas/pep.yaml"
 
 
-
 include: "rules/common.smk"
 include: "rules/samtools.smk"
 include: "rules/jacusa2.smk"
+include: "rules/meta.smk"
 
 
 rule all:
@@ -26,3 +26,15 @@ rule downsampling:
 
 rule mixing:
   input: mixing_targets()
+
+
+rule describe_config:
+  input: "{workflow.basedir}/schemas/config.yaml"
+  run:
+    pass # TODO
+
+
+rule describe_pep:
+  input: "{workflow.basedir}/schemas/pop.yaml"
+  run:
+    pass # TODO

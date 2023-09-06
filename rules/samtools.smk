@@ -1,28 +1,32 @@
 rule samtools_preprocess_bam:
-  input: bam=join_path("data/bams/{bam}"),
+  input: bam=join_path("data/bams/raw/{filename}.bam"),
+         bai=join_path("data/bams/raw/{filename}.bam.bai"),
          ref=REF_FASTA,
          regions=REGIONS,
-  output: join_path("results/data/preprocessed/bams/{bam}"),
+  output: join_path("results/data/bams/preprocessed/{filename}.bam"),
   params:
     filter=config["preprocess"]["filter"],
     calmd=config["preprocess"]["calmd"],
-  log: join_path("logs/samtools/preprocess/{bam}")
+  log: join_path("logs/samtools/preprocess/{filename}.log")
   run:
-    filter_cmd = "samtools view {params.filter} -b {input}"
-    calmd_cmd = "samtools calmd -b {input.ref} > {output}"
+    with open(input.regions, "r") as f:
+      regions = [line.strip() for line in f.readlines()]
+
+    filter_cmd = "samtools view {params.filter} -b {input.bam} " + " ".join(regions)
+    calmd_cmd = "samtools calmd -b /dev/stdin {input.ref}"
 
     cmds = [filter_cmd, ]
-    if params.callmd:
+    if params.calmd:
       cmds.append(calmd_cmd)
-    cmd = "|".join(cmds)
+    cmd = " | ".join(cmds)
 
-    shell("( " + cmd " > {output} ) 2> {log}")
+    shell("( " + cmd + " > {output} ) 2> {log}")
 
 
 rule samtools_downsample_bam:
-  input: join_path("results/data/preprocessed-bams/{bam}")
+  input: join_path("results/data/bams/preprocessed/{bam}")
   output: join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bam}")
-  log: join_path("logs/samtools/downsample_bam/seed~{seed}_reads~{reads}/{bam}")
+  log: join_path("logs/samtools/downsample_bam/seed~{seed}_reads~{reads}/{bam}.log")
   script: "scripts/sample_bam.py"
 
 
@@ -44,8 +48,6 @@ rule samtools_mix_bams:
 
 
 rule samtools_index_bam:
-  input: "{bam}"
-  output: "{bam}.bai"
-  shell: """
-    samtools index {input}
-  """
+  input: "{filename}.bam"
+  output: "{filename}.bam.bai"
+  shell: "samtools index {input}"

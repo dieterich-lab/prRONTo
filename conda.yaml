@@ -1,4 +1,4 @@
-name: rrna_pipeline
+name: prRONTo
 channels:
   - conda-forge
   - bioconda
@@ -9,5 +9,5 @@ dependencies:
   - pandas
   - click
   - samtools
-    #  - jacusa2
-    #- jacusa2helper
+  - jacusa2
+  - r-jacusa2helper

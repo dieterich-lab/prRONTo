@@ -34,18 +34,22 @@ properties:
       filter: "-F 3328"
       calmd: true
   lof:
-    type: object
-    properties:
-      neighbors:
-        type: integer
-        minimum: 1
-      contamination:
-        type: number
-        minimum: 0
-        maximum: 1
+    type: array
+    items:
+      type: object
+      properties:
+        neighbors:
+          type: integer
+          minimum: 1
+        contamination:
+          type: number
+          minimum: 0
+          maximum: 1
+    uniqueItems: true
+    minItems: 1
     default:
-      neighbors: 20
-      contamination: 0.002
+      - neighbors: 20
+        contamination: 0.002
   jacusa2:
     type: object
     properties:
@@ -92,7 +96,7 @@ properties:
           type: string
         uniqueItems: true
         minItems: 1
-      coverages:
+      reads:
         type: array
         items:
           type: integer

@@ -2,6 +2,13 @@ import os
 
 from snakemake.shell import shell
 
+wildcard_constraints:
+  ANALYSIS = "(analysis|downsampling|mixing)"
+
+
+SAMPLES = pep.sample_table
+PRONTO = pep.config.pronto
+
 
 def join_path(*e):
   return os.path.join(PRONTO.get("output_dir"), *e)
@@ -11,27 +18,41 @@ REF_FASTA = join_path("data/ref.fasta")
 MODS = join_path("data/mods.tsv")
 REGIONS = join_path("results/data/regions.txt")
 
-SAMPLES = pep.sample_table
-PRONTO = pep.config.pronto
-
 
 def analysis_targets():
-  print(config)
-  print(SAMPLES)
-  print(PRONTO)
-  return [join_path("jacusa2/analysis/cond1_vs_cond2.out"),]
+  targets = []
+  for lof in config["lof"]:
+    neighbors = lof["neighbors"]
+    contamination = lof["contamination"]
+    targets.append(
+        join_path("results/analysis/jacusa2/preprocessed/lof",
+                  f"neighbors~{neighbors}_contamination~{contamination}",
+                  "cond1_vs_cond2_lof.tsv"))
 
-# TODO
-# * add features/scores
-# * add meta
-# * plots: # number of sites total
+  print(targets)
+  return targets
 
-
-def mixing_targets():
-  return [] # pass
 
 
 def downsampling_targets():
+  if not "downsampling" in config:
+    return ""
+
+  targets = []
+  path = "resuts/downsampling/bams"
+  for seed in config["downsampling"]["seeds"]:
+    for reads in config.downsampling.reads:
+      targets.append(join_path(path,
+                               f"seed~{seed}_reads~{reads}",
+                               "cond1_vs_cond2"))
+
+  return [targets]
+
+
+def mixing_targets():
+  if not "mixing" in config:
+    return ""
+
   return [] # pass
 
 
@@ -77,21 +98,21 @@ rule include_mods:
 
 
 def create_include_bam_rules(condition):
-  fnames = SAMPLES.loc[SAMPLES["condition"] == condition, "filename"]
+  fnames = SAMPLES.loc[SAMPLES["condition"] == str(condition), "filename"]
   for i, fname in enumerate(fnames, start=1):
-    rule include_bam:
-      name: f"{dyn_include_bam}"
+    rule:
+      name: f"dyn_include_bam_cond{condition}_rep{i}"
       input: fname
-      output: join_path(f"data/bams/cond{condition}_{i}.bam")
+      output: join_path(f"data/bams/raw/cond{condition}_rep{i}.bam")
       params:
         include=config.get("include", {}).get("bams")
       run:
-          if params.include == "copy":
-            cmd = "cp"
-          else:
-            cmd = "ln -s"
+        if params.include == "copy":
+          cmd = "cp"
+        else:
+          cmd = "ln -s"
 
-          shell(cmd + " {input} {output}")
+        shell(cmd + " {input} {output}")
 
 
 create_include_bam_rules(1)
@@ -103,6 +124,18 @@ rule create_regions:
   params:
     regions=PRONTO.regions
   run:
-      with open({output}, "w") as f:
-        for region in {params.regions}:
+      with open(output[0], "w") as f:
+        for region in set(params.regions):
           f.write(f"{region}\n")
+
+
+def replicates(condition):
+  return len(SAMPLES.loc[SAMPLES["condition"] == str(condition), "filename"].tolist())
+
+
+rule link_analysis_bams:
+  input: join_path("results/data/bams/preprocessed/{filename}.bam"),
+  output: join_path("results/analysis/bams/preprocessed/{filename}.bam"),
+  shell: """
+    ln -sf ../../../data/bams/preprocessed/{wildcards.filename}.bam {output}
+  """

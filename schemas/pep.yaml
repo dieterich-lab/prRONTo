@@ -1,6 +1,6 @@
 description: pRONTo PEP schema
-imports:
-  - http://schema.databio.org/pep/2.0.0.yaml
+  #imports:
+  #- http://schema.databio.org/pep/2.0.0.yaml
 
 properties:
   samples:

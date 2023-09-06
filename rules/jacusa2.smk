@@ -1,34 +1,46 @@
-def replicates(cond):
-  # TODO do calculation
-  return 1
+def jacusa2_bams(condition):
+  def helper(wildcards):
+    condition2wildcard = {
+        "A": wildcards.condA,
+        "B": wildcards.condB,}
+    bams = []
+    bams_pattern = join_path("results",
+                             wildcards.ANALYSIS,
+                             "bams",
+                             wildcards.bam_prefix,
+                             condition2wildcard[condition] + "_rep{rep}.bam")
+    # FIXME change to condI to enable multiple combinations
+    if condition2wildcard[condition] == "cond1":
+      reps = replicates(1)
+    elif condition2wildcard[condition] == "cond2":
+      reps = replicates(2)
+    else:
+      reps = 1
 
-  if wildcards.analysis == "analysis":
-    analysis_prefix = "results/data/preprocessed_bams"
-  else:
-    analysis_prefix = f"results/{wildcards.analysis}/bams/bams/bams/bams/bams/bams/bams"
-   cond{cond}_rep{rep}.bam/
+    for rep in range(reps):
+      bams.append(bams_pattern.format(rep = str(rep + 1)))
+
+    print(bams)
+    return bams
+
+  return helper
 
 
-def bams(wildcards, prefix):
-  bams = []
-  for rep in xrange(replicates(cond)):
-    bams.append(join_path(""))
+def jacusa2_bais(condition):
+  def helper(wildcards):
+    return [f"{bam}.bai" for bam in jacusa2_bams(condition)(wildcards)]
 
-  return bams
-
-
-def bais(cond):
-  return [f"{bam}.bai" for bam in bams_analysis(cond)]
+  return helper
 
 
-rule jacusa2_call_analysis:
-  input:
-    bamsA=bams_analysis(1),
-    bais1=bais_analysis(1),
-    bamsA=bams_analysis(2),
-    bais2=bais_analysis(2),
-  output: join_path("results/analysis/jacusa2/{condA}_vs_{condB}.out")
-  log: join_path("logs/analysis/jacusa2/preprocessed_bams/{condA}_vs_{condB}.log")
+rule jacusa2_call:
+  input: # condA can be cond1,2, or 3 from the config - therefore using A, B
+    bamsA=jacusa2_bams("A"),
+    baisA=jacusa2_bais("A"),
+    bamsB=jacusa2_bams("B"),
+    baisB=jacusa2_bais("B"),
+  output: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix,^((?!bams/).)+}/{condA}_vs_{condB}.out"),
+  log: join_path("logs/{ANALYSIS}/jacusa2/call2/{bam_prefix}/{condA}_vs_{condB}.log"),
   threads: config["jacusa2"]["threads"]
   params:
     opts=config["jacusa2"]["opts"],
@@ -49,17 +61,16 @@ rule jacusa2_call_analysis:
   """
 
 
-rule jacusa2_add_scores_analysis:
-  input: join_path("results/analysis/jacusa2/{condA}_vs_{condB}.out")
-  output: join_path("results/analysis/jacusa2/{condA}_vs_{condB}_scores.tsv")
-  log: join_path("results/jacusa2/add_scores/{ANALYSIS}/{bams}/{condA}_vs_{condB}.log")
+rule jacusa2_add_scores:
+  input: join_path("results/{ANALYSIS}/jacusa2/bam/{bam_prefix}/{comparison}.out")
+  output: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_scores.tsv")
+  log: join_path("logs/{ANALYSIS}/jacusa2/add_scores/{bam_prefix}/{comparison}.log")
   shell: """
     Rscript --vanilla {workflow.basedir}/scripts/add_scores.R \
         --output {output} \
-        --comparison {wildcards.condA}_vs_{wildcards.condB} \
+        --comparison {comparison} \
         --analysis {wildcards.ANALYSIS} \
-        --parameters {wildcards.bams} \
+        --parameters {wildcards.bam_prefix} \
         {input} \
         2> {log}
   """
-
