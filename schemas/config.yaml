@@ -56,14 +56,17 @@ properties:
       threads:
         type: integer
         minimum: 1
+        default: 1
       min_mapq:
         type: integer
         minimum: 1
         maximum: 255
+        default: 1
       min_bq:
         type: integer
         minimum: 1
         maximum: 60
+        default: 1
       min_cov:
         type: integer
         minimum: 1
@@ -71,26 +74,24 @@ properties:
         default: 4
       opts:
         type: string
+        default: "-D -i"
       features:
         type: array
         items:
           type: string
         uniqueItems: true
         minItems: 1
-        default:
-          - M
-          - MDI
     default:
       threads: 1
       min_mapq: 1
       min_bq: 1
       min_cov: 4
       opts: "-D -i"
-      defaults: ["M", "MDI",]
+      features: ["M", "MDI",]
   downsampling:
     type: object
     properties:
-      seeds:
+      seed:
         type: array
         items:
           type: string
@@ -104,25 +105,25 @@ properties:
         uniqueItems: true
         minItems: 1
     required:
-      - seeds
-      - coverages
+      - seed
+      - reads
   mixing:
     type: object
     properties:
-      seeds:
+      seed:
         type: array
         items:
           type: string
         uniqueItems: true
         minItems: 1
-      coverages:
+      reads:
         type: array
         items:
           type: integer
           minimum: 100
         uniqueItems: true
         minItems: 1
-      mixings:
+      mixing:
         type: array
         items:
           type: number
@@ -131,7 +132,8 @@ properties:
         uniqueItems: true
         minItems: 1
     required:
-      - seeds
-      - coverages
+      - seed
+      - reads
+      - mixing
 required:
   - pepfile

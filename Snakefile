@@ -1,5 +1,7 @@
 import pandas as pd
 from snakemake.utils import validate
+import yaml
+
 
 validate(config, "schemas/config.yaml")
 pepfile: config["pepfile"]
@@ -29,12 +31,16 @@ rule mixing:
 
 
 rule describe_config:
-  input: "{workflow.basedir}/schemas/config.yaml"
+  input: workflow.basedir + "/schemas/config.yaml"
   run:
-    pass # TODO
+    with open(input[0]) as f:
+      schema = yaml.load(f, Loader=yaml.SafeLoader)
+      print(yaml.dump(schema, default_flow_style=False))
 
 
 rule describe_pep:
-  input: "{workflow.basedir}/schemas/pop.yaml"
+  input: workflow.basedir + "/schemas/pep.yaml"
   run:
-    pass # TODO
+    with open(input[0]) as f:
+      schema = yaml.load(f, Loader=yaml.SafeLoader)
+      print(yaml.dump(schema, default_flow_style=False))

@@ -10,4 +10,6 @@ dependencies:
   - click
   - samtools
   - jacusa2
-  - r-jacusa2helper
+  - r-base
+  # - r-optparse
+  # - r-jacusa2helper

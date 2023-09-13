@@ -1,6 +1,21 @@
 library(magrittr)
 
-# TODO 0, 1 index
+options(error = function() {
+  calls <- sys.calls()
+  if (length(calls) >= 2L) {
+    sink(stderr())
+    on.exit(sink(NULL))
+    cat("Backtrace:\n")
+    calls <- rev(calls[-length(calls)])
+    for (i in seq_along(calls)) {
+      cat(i, ": ", deparse(calls[[i]], nlines = 1L), "\n", sep = "")
+    }
+  }
+  if (!interactive()) {
+    q(status = 1)
+  }
+})
+
 
 CONTEXT <- 5
 
@@ -21,65 +36,74 @@ option_list <- list(
 )
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE
+  positional_arguments = TRUE,
+  #args = c(
+  #  "--output=output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2_meta.tsv",
+  #  "--mods=output/data/mods.tsv",
+  #  "--fasta=output/data/ref.fasta",
+  #  "--context=5",
+  #  "output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2_scores.tsv")
 )
 
 stopifnot(!is.null(opts$options$output))
-stopifnot(opts$options$mods | opts$options$fasta)
-stopifnot(!opts$options$fasta & opts$options$context)
+stopifnot(!is.null(opts$options$mods) || !is.null(opts$options$fasta))
+# FIXME stopifnot(is.null(opts$options$fasta) && !is.null(opts$options$context))
 stopifnot(!is.null(opts$args))
 
 add_ref_context <- function(result, fasta_fname, context) {
-  fasta <- Biostrings::readDNAStringSet(opts$options$fasta_fname)
+  fasta <- Biostrings::readDNAStringSet(fasta_fname)
 
   GenomeInfoDb::seqlevels(result) <- GenomeInfoDb::seqlevels(fasta)
   GenomicRanges::seqinfo(result) <- GenomicRanges::seqinfo(fasta)
 
-  # TODO test parameters
   result %>%
     IRanges::resize(width = context, fix = "center") %>%
-    IRanges::shift(1) %>%
-    plyranges::filter(start > 0 & end < GenomeInfoDb::seqlengths(.)[as.character(GenomeInfoDb::seqnames(.))]) %>%
+    #IRanges::shift(1) %>%
+    plyranges::filter(start > 0 & end <= GenomeInfoDb::seqlengths(.)[as.character(GenomeInfoDb::seqnames(.))]) %>%
     plyranges::mutate(ref_context = BSgenome::getSeq(fasta, .) %>%
                       as.character()) %>%
-    IRanges::shift(-1) %>%
+    #IRanges::shift(-1) %>%
     IRanges::resize(width = IRanges::width(.) + 1)
 }
 
 add_mods <- function(result, mods_fname) {
   mods <- data.table::fread(mods_fname, header = TRUE) %>%
     as.data.frame() %>%
+    dplyr::rename(seqnames = seq_id, start = pos) %>%
     dplyr::mutate(end = start) %>%
-    GenomicRanges::GRanges()
+    GenomicRanges::GRanges() %>%
+    IRanges::shift(1)
 
   suppressWarnings({
     result %>%
-      plyranges::join_overlap_left(mods) })
+      plyranges::join_overlap_left(mods)})
 }
 
 opt_cols <- c()
 
 result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
-  GenomicRanges::GenomicRanges(result) %>%
-  IRanges::shift(-1)
+  dplyr::mutate(start = pos, end = pos) %>%
+  GenomicRanges::GRanges()
 
-if (opts$options$mods) {
+if (!is.null(opts$options$mods)) {
   opt_cols <- c(opt_cols, "mod")
 
   result <- add_mods(result, opts$options$mods) %>%
     plyranges::mutate(
-      mod = replace(mod, is.na(mod), "")
+      mod = replace(mod, is.na(mod), "*")
     )
 }
 
-if (opts$options$fasta) {
+if (!is.null(opts$options$fasta)) {
   opt_cols <- c(opt_cols, "ref_context")
 
   result <- add_ref_context(result, opts$options$fasta, opts$options$context)
 }
 
 df <- result %>%
-  as.data.frame()
+  as.data.frame() %>%
+  dplyr::select(-c(start, end, width)) %>%
+  dplyr::relocate(ref_context, .after = ref)
 
 write.table(df, opts$options$output,
-            quote = FALSE, sep = ",", col.names = TRUE, row.names = FALSE)
+            quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE)

@@ -1,9 +1,9 @@
 import os
-
+import re
 from snakemake.shell import shell
 
 wildcard_constraints:
-  ANALYSIS = "(analysis|downsampling|mixing)"
+  ANALYSIS = "(analysis|downsampling|mixing)",
 
 
 SAMPLES = pep.sample_table
@@ -20,16 +20,8 @@ REGIONS = join_path("results/data/regions.txt")
 
 
 def analysis_targets():
-  targets = []
-  for lof in config["lof"]:
-    neighbors = lof["neighbors"]
-    contamination = lof["contamination"]
-    targets.append(
-        join_path("results/analysis/jacusa2/preprocessed/lof",
-                  f"neighbors~{neighbors}_contamination~{contamination}",
-                  "cond1_vs_cond2_lof.tsv"))
+  targets = analysis_lof_results()
 
-  print(targets)
   return targets
 
 
@@ -38,15 +30,9 @@ def downsampling_targets():
   if not "downsampling" in config:
     return ""
 
-  targets = []
-  path = "resuts/downsampling/bams"
-  for seed in config["downsampling"]["seeds"]:
-    for reads in config.downsampling.reads:
-      targets.append(join_path(path,
-                               f"seed~{seed}_reads~{reads}",
-                               "cond1_vs_cond2"))
+  targets = downsampling_lof_results()
 
-  return [targets]
+  return targets
 
 
 def mixing_targets():
@@ -65,6 +51,9 @@ def auto_targets():
   for key, callback in key2callback.items():
     if key in config:
       targets.extend(callback())
+
+  targets.append(join_path("results/read_info.tsv"))
+  targets.append(join_path("results/merged_lof.tsv"))
 
   return targets
 
@@ -114,9 +103,9 @@ def create_include_bam_rules(condition):
 
         shell(cmd + " {input} {output}")
 
-
-create_include_bam_rules(1)
-create_include_bam_rules(2)
+# create dynamically rules to include raw bams for all conditions
+for condition in SAMPLES["condition"].unique():
+  create_include_bam_rules(condition)
 
 
 rule create_regions:

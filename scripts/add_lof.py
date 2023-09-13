@@ -7,37 +7,42 @@ from sklearn.neighbors import LocalOutlierFactor
 
 
 @click.command()
-@click.option("-f", "--feature", multiple=True, required=True, help="Columns to use as score")
-@click.option("-o", "--output", required=True, help="Output file name")
-@click.option("-n", "--neighbors", default=20, help="Number of neighbors for LOF calculation")
-@click.option("-c", "--contamination", default=0.002, help="Contamination value for LOF calculation")
-@click.option("-m", "--filter-median", help="Filter outlier beyond median")
+@click.option("-f", "--feature", type=str, multiple=True, required=True, help="Columns to use as score")
+@click.option("-o", "--output", type=str, required=True, help="Output file name")
+@click.option("-n", "--neighbors", type=int, default=20, help="Number of neighbors for LOF calculation")
+@click.option("-c", "--contamination", type=float, default=0.002, help="Contamination value for LOF calculation")
+@click.option("-m", "--filter-median", is_flag=True, show_default=True, default=False, help="Filter outlier beyond median")
 @click.argument("file", type=click.Path(exists=True))
-def cli(scores, output, neighbors, contamination, filter_median, file):
+def cli(feature, output, neighbors, contamination, filter_median, file):
   df = pd.read_csv(file, sep = "\t")
   lof_params = {
           "neighbors": neighbors,
           "contamination": contamination,}
-  new_df = add_lof_score(df, list(scores), filter_median, lof_params)
+  new_df = add_lof_score(df, list(feature), filter_median, lof_params)
   new_df.to_csv(output, sep="\t", index=False)
 
 
-def add_lof_score(df, cols, filter_median = False, lof_params = None):
-  lof_params = lof_params if  lof_params else {}
-  new_col_lof = "_".join(cols) + "_lof_score"
-  new_col_outlier = "_".join(cols) + "_lof_outlier"
+def add_lof_score(df, features, filter_median, lof_params):
+  for feature in features:
+    new_col_lof = "lof_score_" + feature
+    new_col_outlier =  "lof_outlier_" + feature
+    cols = [f"feature_{col}" for col in feature.split("_")]
 
-  lof = LocalOutlierFactor(contamination=lof_params.get("contamination", "auto"),
-                           n_neighbors=lof_params.get("neighbors", 20))
-  ohat = lof.fit_predict(df[cols])
-  scores = lof.negative_outlier_factor_
-  df[new_col_lof] = scores
-  df[new_col_outlier] = ohat
-  if filter_median:
+    lof = LocalOutlierFactor(contamination=lof_params["contamination"],
+                             n_neighbors=lof_params["neighbors"])
+    ohat = lof.fit_predict(df[cols])
+    scores = lof.negative_outlier_factor_
+    df[new_col_lof] = scores * -1 # make scores positive
+    df[new_col_outlier] = ohat * -1 # flip class labels
+    if filter_median:
       smaller = df[cols].median() > df[cols]
-      # reduce rows
-      reduced_rows= [all(row) for row in smaller.itertuples(index=False)]
-      df[reduced_rows, new_col_outlier] = 0
+      # reduce
+      smaller = smaller.eval("&".join(smaller))
+      # smaller and outlier
+      smaller = smaller & df[new_col_outlier] == 1
+      if any(smaller):
+        df.loc[smaller, [new_col_outlier]] = 0
+      # FIXME own calculation of outlier
 
   return df
 

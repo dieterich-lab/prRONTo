@@ -24,10 +24,19 @@ rule samtools_preprocess_bam:
 
 
 rule samtools_downsample_bam:
-  input: join_path("results/data/bams/preprocessed/{bam}")
-  output: join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bam}")
-  log: join_path("logs/samtools/downsample_bam/seed~{seed}_reads~{reads}/{bam}.log")
-  script: "scripts/sample_bam.py"
+  input: bam=join_path("results/data/bams/preprocessed/{filename}.bam"),
+         coverage=join_path("results/data/bams/preprocessed/{filename}_coverage.tsv"),
+  output: join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{filename}.bam")
+  log: join_path("logs/samtools/downsample_bam/seed~{seed}_reads~{reads}/{filename}.log")
+  run:
+    df = pd.read_csv(input.coverage, sep = "\t")
+    read_count = sum(df["numreads"])
+    fraction = round(int(wildcards.reads) / read_count, 3)
+    if fraction > 1:
+      # TODO up sample
+      breakpoint()
+    cmd = f"samtools view --subsample {fraction} --subsample-seed {wildcards.seed} " + "-o {output} {input.bam}"
+    shell(cmd + " 2> {log}")
 
 
 rule samtools_mix_bams:
@@ -51,3 +60,49 @@ rule samtools_index_bam:
   input: "{filename}.bam"
   output: "{filename}.bam.bai"
   shell: "samtools index {input}"
+
+
+rule samtools_coverage:
+  input: "{filename}.bam",
+  output: "{filename}_coverage.tsv"
+  shell: "samtools coverage {input} > {output}"
+
+
+def all_bams():
+  fnames = []
+
+  conditions, replicates = glob_wildcards(join_path("data/bams/raw/cond{condition}_rep{replicate}.bam"))
+  for condition, replicate in zip(conditions, replicates):
+    fnames.append(join_path(f"data/bams/raw/cond{condition}_rep{replicate}_coverage.tsv"))
+    fnames.append(join_path(f"results/data/bams/preprocessed/cond{condition}_rep{replicate}_coverage.tsv"))
+
+    if "downsampling" in config:
+      for seed in config["downsampling"]["seed"]:
+        for reads in config["downsampling"]["reads"]:
+          fnames.append(
+            join_path("results/downsampling/bams",
+                      f"seed~{seed}_reads~{reads}",
+                      f"cond{condition}_rep{replicate}_coverage.tsv"))
+
+  if "mixing" in config:
+    pass # TODO implement
+
+  return fnames
+
+
+rule samtools_create_read_info:
+  input: all_bams()
+  output: join_path("results/read_info.tsv"),
+  run:
+    dfs = []
+    for fname in input:
+      df = pd.read_csv(fname, sep="\t")
+      df["fname"] = fname
+      result = re.search(r"bams/([^/]+)/cond(\d+)_rep(\d+)_coverage.tsv$", fname)
+      parameters, condition, replicate = result.groups()
+      df["parameters"] = parameters
+      df["condition"] = condition
+      df["replicate"] = replicate
+      dfs.append(df)
+    df = pd.concat(dfs)
+    df.to_csv(output[0], sep="\t", index=False)
