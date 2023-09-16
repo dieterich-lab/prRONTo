@@ -36,12 +36,12 @@ option_list <- list(
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
   positional_arguments = TRUE,
-  args=c("--analysis=analysis",
-         "--comparison=cond1_vs_cond2",
-         "--features=M,MDI,M_D_I,M5DI,M5D5I5,M_DI,M5_D5_I5,M_M_M5",
-         "--output=tmp/test.pdf",
-         "--parameters=preprocessed",
-         "output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2.out")
+  #args=c("--analysis=analysis",
+  #       "--comparison=cond1_vs_cond2",
+  #       "--features=M,MDI,M_D_I,M5DI,M5D5I5,M_DI,M5_D5_I5,M_M_M5",
+  #       "--output=tmp/test.pdf",
+  #       "--parameters=preprocessed",
+  #       "output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2.out")
 )
 
 stopifnot(!is.null(opts$options$output))
@@ -109,7 +109,6 @@ result <- result %>%
 
 features <- strsplit(opts$options$feature, ",") %>%
   unlist(use.names = FALSE)
-feature_cols <- paste0("feature_", features)
 for (feature in features) {
   feature_col <- paste0("feature_", feature)
   if (feature_col %in% names(GenomicRanges::mcols(result))) {
@@ -145,7 +144,6 @@ for (feature in features) {
   }
 }
 
-browser()
 df <- result %>%
   as.data.frame() %>%
   dplyr::select(
@@ -153,9 +151,8 @@ df <- result %>%
     end,
     strand,
     ref,
-    dplyr::all_of(feature_cols),
-    dplyr::all_of(opt_cols),
-    -c(score, deletion_score, insertion_score)
+    dplyr::starts_with("feature_"), # FIXME remove not needed
+    dplyr::all_of(opt_cols)
   ) %>%
   dplyr::rename(pos = end)
 

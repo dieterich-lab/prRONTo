@@ -1,4 +1,3 @@
-
 def jacusa2_bams(condition):
   def helper(wildcards):
     condition2wildcard = {
@@ -12,9 +11,9 @@ def jacusa2_bams(condition):
                              condition2wildcard[condition] + "_rep{rep}.bam")
     # FIXME change to condI to enable multiple combinations
     if condition2wildcard[condition] == "cond1":
-      reps = replicates(1)
+      reps = get_replicates(1)
     elif condition2wildcard[condition] == "cond2":
-      reps = replicates(2)
+      reps = get_replicates(2)
     else:
       reps = 1
 
@@ -33,7 +32,8 @@ def jacusa2_bais(condition):
   return helper
 
 
-print(config["jacusa2"])
+# FIXME make generic comparisons
+# FIXME make library type a config option
 rule jacusa2_call:
   input: # condA can be cond1,2, or 3 from the config - therefore using A, B
     bamsA=jacusa2_bams("A"),
@@ -67,9 +67,9 @@ def jacusa2_features():
 
 
 rule jacusa2_add_scores:
-  input: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}.out")
-  output: temp(join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_scores.tsv"))
-  log: join_path("logs/{ANALYSIS}/jacusa2/add_scores/{bam_prefix}/{comparison}.log")
+  input: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}.out"),
+  output: temp(join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_scores.tsv")),
+  log: join_path("logs/{ANALYSIS}/jacusa2/add_scores/{bam_prefix}/{comparison}.log"),
   params:
     features=jacusa2_features(),
   shell: """

@@ -36,13 +36,14 @@ option_list <- list(
 )
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE,
+  positional_arguments = TRUE#,
   #args = c(
   #  "--output=output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2_meta.tsv",
   #  "--mods=output/data/mods.tsv",
   #  "--fasta=output/data/ref.fasta",
   #  "--context=5",
-  #  "output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2_scores.tsv")
+    #"output/results/analysis/jacusa2/preprocessed/cond1_vs_cond2_scores.tsv"),
+  #  "output/results/downsampling/jacusa2/seed~3_reads~200/cond1_vs_cond2_scores.tsv")
 )
 
 stopifnot(!is.null(opts$options$output))
@@ -58,12 +59,10 @@ add_ref_context <- function(result, fasta_fname, context) {
 
   result %>%
     IRanges::resize(width = context, fix = "center") %>%
-    #IRanges::shift(1) %>%
     plyranges::filter(start > 0 & end <= GenomeInfoDb::seqlengths(.)[as.character(GenomeInfoDb::seqnames(.))]) %>%
     plyranges::mutate(ref_context = BSgenome::getSeq(fasta, .) %>%
                       as.character()) %>%
-    #IRanges::shift(-1) %>%
-    IRanges::resize(width = IRanges::width(.) + 1)
+    IRanges::resize(width = 1, fix = "center")
 }
 
 add_mods <- function(result, mods_fname) {
@@ -98,6 +97,7 @@ if (!is.null(opts$options$fasta)) {
   opt_cols <- c(opt_cols, "ref_context")
 
   result <- add_ref_context(result, opts$options$fasta, opts$options$context)
+  head(result$ref_context)
 }
 
 df <- result %>%

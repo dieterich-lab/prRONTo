@@ -12,6 +12,8 @@ include: "rules/common.smk"
 include: "rules/samtools.smk"
 include: "rules/jacusa2.smk"
 include: "rules/meta.smk"
+include: "rules/plot.smk"
+include: "rules/report.smk"
 
 
 rule all:
@@ -26,8 +28,8 @@ rule downsampling:
   input: downsampling_targets()
 
 
-rule mixing:
-  input: mixing_targets()
+#rule mixing:
+#  input: mixing_targets()
 
 
 rule describe_config:

@@ -5,21 +5,19 @@ def get_max_context():
   features = config["jacusa2"]["features"]
   contexts = [5, ]
   for feature in features:
-    context = re.sub(r"[MDI_]+", "", feature)
-    if context:
-      contexts.append(int(context))
+    contexts.extend(re.findall("\d+", feature))
+  contexts = [int(context) for context in contexts]
 
   return max(contexts)
 
 
-rule add_meta:
+rule meta_add:
   input: scores=join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_scores.tsv"),
          ref=REF_FASTA,
          mods=MODS,
   output: temp(join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_meta.tsv")),
   log: join_path("logs/{ANALYSIS}/add_meta/{bam_prefix}/{comparison}.log"),
-  params:
-    context=get_max_context()
+  params: context=get_max_context()
   shell: """
     Rscript {workflow.basedir}/scripts/add_meta.R \
         --output {output} \
@@ -37,12 +35,13 @@ def parse_features():
   return " ".join(opts)
 
 
-rule add_lof:
+rule meta_add_lof:
   input: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_meta.tsv"),
   output: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/lof/neighbors~{neighbors}_contamination~{contamination}/{comparison}.tsv"),
   log: join_path("logs/{ANALYSIS}/add_lof/{bam_prefix}/neighbors~{neighbors}_contamination~{contamination}/{comparison}.log"),
   params:
     features=parse_features()
+  # TODO filter-media in config
   shell: """
     python {workflow.basedir}/scripts/add_lof.py \
         {params.features} \
@@ -53,56 +52,3 @@ rule add_lof:
         {input} \
         2> {log}
   """
-
-
-def analysis_lof_results():
-  targets = []
-  for lof in config["lof"]:
-    neighbors = lof["neighbors"]
-    contamination = lof["contamination"]
-    targets.append(
-        join_path("results/analysis/jacusa2",
-                  "preprocessed",
-                  "lof",
-                  f"neighbors~{neighbors}_contamination~{contamination}",
-                  "cond1_vs_cond2.tsv"))
-
-  return targets
-
-
-def downsampling_lof_results():
-  targets = []
-  for seed in config["downsampling"]["seed"]:
-    for lof in config["lof"]:
-      neighbors = lof["neighbors"]
-      contamination = lof["contamination"]
-      for reads in config["downsampling"]["reads"]:
-        targets.append(
-          join_path("results/downsampling/jacusa2",
-                    f"seed~{seed}_reads~{reads}",
-                    "lof",
-                    f"neighbors~{neighbors}_contamination~{contamination}",
-                    "cond1_vs_cond2.tsv"))
-
-  return targets
-
-
-def merged_lof_results():
-  targets = analysis_lof_results()
-
-  if "downsampling" in config:
-    targets.extend(downsampling_lof_results())
-
-    if "mixing" in config:
-      targets.extend(downsampling_lof_results())
-
-  return targets
-
-
-rule merge_lof_results:
-  input: merged_lof_results()
-  output: join_path("results/merged_lof.tsv"),
-  run:
-    dfs = [pd.read_csv(fname, sep="\t") for fname in input]
-    df = pd.concat(dfs, ignore_index=True, )
-    df.to_csv(output[0], sep="\t", index=False)

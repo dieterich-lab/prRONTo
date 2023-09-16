@@ -21,6 +21,7 @@ REGIONS = join_path("results/data/regions.txt")
 
 def analysis_targets():
   targets = analysis_lof_results()
+  targets.extend(analysis_feature_plots())
 
   return targets
 
@@ -52,8 +53,12 @@ def auto_targets():
     if key in config:
       targets.extend(callback())
 
-  targets.append(join_path("results/read_info.tsv"))
   targets.append(join_path("results/merged_lof.tsv"))
+
+  targets.append(join_path("results/plots/mod_summary.pdf"))
+  targets.append(join_path("results/plots/read_summary/total.pdf"))
+  targets.append(join_path("results/plots/feature_lof_summary.pdf"))
+  targets.append(join_path("results/report/report.pdf"))
 
   return targets
 
@@ -86,7 +91,8 @@ rule include_mods:
       shell(cmd + " {input} {output}")
 
 
-def create_include_bam_rules(condition):
+# FIXME what if there is a replicate column in SAMPLES
+def create_include_bam_rules(condition: int):
   fnames = SAMPLES.loc[SAMPLES["condition"] == str(condition), "filename"]
   for i, fname in enumerate(fnames, start=1):
     rule:
@@ -103,6 +109,7 @@ def create_include_bam_rules(condition):
 
         shell(cmd + " {input} {output}")
 
+
 # create dynamically rules to include raw bams for all conditions
 for condition in SAMPLES["condition"].unique():
   create_include_bam_rules(condition)
@@ -118,7 +125,7 @@ rule create_regions:
           f.write(f"{region}\n")
 
 
-def replicates(condition):
+def get_replicates(condition):
   return len(SAMPLES.loc[SAMPLES["condition"] == str(condition), "filename"].tolist())
 
 
@@ -128,3 +135,73 @@ rule link_analysis_bams:
   shell: """
     ln -sf ../../../data/bams/preprocessed/{wildcards.filename}.bam {output}
   """
+
+
+def analysis_lof_results():
+  targets = []
+  for lof in config["lof"]:
+    neighbors = lof["neighbors"]
+    contamination = lof["contamination"]
+    targets.append(
+        join_path("results/analysis/jacusa2",
+                  "preprocessed",
+                  "lof",
+                  f"neighbors~{neighbors}_contamination~{contamination}",
+                  "cond1_vs_cond2.tsv"))
+
+  return targets
+
+# TODO add region
+def analysis_feature_plots():
+  targets = []
+  for lof in config["lof"]:
+    neighbors = lof["neighbors"]
+    contamination = lof["contamination"]
+    for feature in config["jacusa2"]["features"]:
+      targets.append(
+          join_path("results/plots/feature/analysis",
+                    "preprocessed",
+                    f"neighbors~{neighbors}_contamination~{contamination}",
+                    "cond1_vs_cond2",
+                    f"feature~{feature}"))
+
+  return targets
+
+
+def downsampling_lof_results():
+  targets = []
+  for seed in config["downsampling"]["seed"]:
+    for lof in config["lof"]:
+      neighbors = lof["neighbors"]
+      contamination = lof["contamination"]
+      for reads in config["downsampling"]["reads"]:
+        targets.append(
+          join_path("results/downsampling/jacusa2",
+                    f"seed~{seed}_reads~{reads}",
+                    "lof",
+                    f"neighbors~{neighbors}_contamination~{contamination}",
+                    "cond1_vs_cond2.tsv"))
+
+  return targets
+
+
+def merged_lof_results():
+  targets = analysis_lof_results()
+
+  if "downsampling" in config:
+    targets.extend(downsampling_lof_results())
+
+    if "mixing" in config:
+      pass # TODO mixing
+
+  return targets
+
+
+rule merge_lof_results:
+  input: merged_lof_results()
+  output: join_path("results/merged_lof.tsv"),
+  log: join_path("logs/merge_lof_results.log"), # TODO - where to put this
+  run:
+    dfs = [pd.read_csv(fname, sep="\t") for fname in input]
+    df = pd.concat(dfs, ignore_index=True, )
+    df.to_csv(output[0], sep="\t", index=False)

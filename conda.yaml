@@ -11,5 +11,7 @@ dependencies:
   - samtools
   - jacusa2
   - r-base
+  - knitr
+  - rmarkdown
   # - r-optparse
   # - r-jacusa2helper

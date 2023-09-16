@@ -1,22 +1,6 @@
 library(ggplot2)
 library(magrittr)
 
-options(error = function() {
-  calls <- sys.calls()
-  if (length(calls) >= 2L) {
-    sink(stderr())
-    on.exit(sink(NULL))
-    cat("Backtrace:\n")
-    calls <- rev(calls[-length(calls)])
-    for (i in seq_along(calls)) {
-      cat(i, ": ", deparse(calls[[i]], nlines = 1L), "\n", sep = "")
-    }
-  }
-  if (!interactive()) {
-    q(status = 1)
-  }
-})
-
 option_list <- list(
   optparse::make_option(c("-f", "--features"),
                         type = "character",
@@ -30,11 +14,11 @@ option_list <- list(
 )
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE,
-  args = c(
-           #"--features=M",
-           "--output=tmp",
-           "output/results/merged_lof.tsv")
+  positional_arguments = TRUE#,
+  #args = c(
+  #         #"--features=M",
+  #         "--output=tmp",
+  #         "output/results/merged_lof.tsv")
 )
 
 stopifnot(!is.null(opts$options$output))
@@ -56,6 +40,6 @@ stopifnot(!is.null(features) && length(features) > 0)
 feature_lof_outlier_cols = paste0("lof_outlier_", features)
 filtered <- df %>%
   dplyr::mutate(modified = mod != "*") %>%
-  dplyr::select(seqnames, pos, strand, modified, analysis, parameters, comparison, dplyr::all_of(feature_lof_outlier_cols)) 
+  dplyr::select(seqnames, pos, strand, modified, analysis, parameters, comparison, dplyr::all_of(feature_lof_outlier_cols))
 
 

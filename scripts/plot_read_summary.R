@@ -1,21 +1,6 @@
 library(magrittr)
 library(ggplot2)
 
-options(error = function() {
-  calls <- sys.calls()
-  if (length(calls) >= 2L) {
-    sink(stderr())
-    on.exit(sink(NULL))
-    cat("Backtrace:\n")
-    calls <- rev(calls[-length(calls)])
-    for (i in seq_along(calls)) {
-      cat(i, ": ", deparse(calls[[i]], nlines = 1L), "\n", sep = "")
-    }
-  }
-  if (!interactive()) {
-    q(status = 1)
-  }
-})
 
 option_list <- list(
   optparse::make_option(c("-d", "--device"),
@@ -28,9 +13,9 @@ option_list <- list(
 )
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE,
-  args = c("--output=tmp",
-           "output/results/read_info.tsv")
+  positional_arguments = TRUE#,
+  #args = c("--output=tmp",
+  #         "output/results/read_summary")
 )
 
 stopifnot(!is.null(opts$options$output))
@@ -72,6 +57,23 @@ plot_data <- function(df) {
   p
 }
 
+plot_seqids <- function(df) {
+  p <- df %>%
+    ggplot(aes(x = interaction(replicate, condition),
+               y = numreads,
+               fill = parameters)) +
+      geom_col(position = position_dodge(width = NULL)) +
+      geom_text(aes(label = numreads), position = position_dodge(width = 0.9)) +
+      labs(x = "conditions and replicates", y = "reads", fill = "reads", colour = "") +
+      scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
+      ggtitle("Sequence IDs") +
+      theme_bw() +
+      theme(legend.position = "bottom") +
+      facet_wrap(rname ~ .)
+
+  p
+}
+
 plot_downsampling <- function(df) {
   p <- df %>%
     ggplot(aes(x = interaction(replicate, condition),
@@ -98,6 +100,13 @@ plot <- function(df, output) {
     dplyr::ungroup() %>%
     plot_data()
 
+  p_seqids <- df %>%
+    dplyr::filter(analysis == "data") %>%
+    dplyr::group_by(rname, parameters, condition, replicate) %>%
+    dplyr::summarise(numreads = sum(numreads)) %>%
+    dplyr::ungroup() %>%
+    plot_seqids()
+
   p_downsampling <- df %>%
     dplyr::filter(analysis == "downsampling") %>%
     dplyr::group_by(seed, reads, parameters, condition, replicate) %>%
@@ -106,11 +115,11 @@ plot <- function(df, output) {
     dplyr::mutate(reads = as.numeric(reads)) %>%
     plot_downsampling()
 
-  p <- ggpubr::ggarrange(p_data, p_downsampling,
-                       labels = c("A", "B"),
-                       nrow = 2)
+  p <- ggpubr::ggarrange(p_data, p_seqids, p_downsampling,
+                         labels = c("A", "B", "C"),
+                         ncol = 1)
 
-  ggsave(output, p)
+  ggsave(output, p, width = 10, height = 20)
 }
 
 dir.create(opts$options$output, showWarnings = FALSE)

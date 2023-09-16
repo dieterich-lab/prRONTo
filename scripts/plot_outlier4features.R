@@ -1,21 +1,7 @@
+# TODO TEST
 library(ggplot2)
 library(magrittr)
 
-options(error = function() {
-  calls <- sys.calls()
-  if (length(calls) >= 2L) {
-    sink(stderr())
-    on.exit(sink(NULL))
-    cat("Backtrace:\n")
-    calls <- rev(calls[-length(calls)])
-    for (i in seq_along(calls)) {
-      cat(i, ": ", deparse(calls[[i]], nlines = 1L), "\n", sep = "")
-    }
-  }
-  if (!interactive()) {
-    q(status = 1)
-  }
-})
 
 option_list <- list(
   optparse::make_option(c("-f", "--features"),
@@ -30,11 +16,11 @@ option_list <- list(
 )
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE,
-  args = c(
-           #"--features=M",
-           "--output=tmp",
-           "output/results/analysis/jacusa2/preprocessed/lof/neighbors~20_contamination~0.002/cond1_vs_cond2.tsv")
+  positional_arguments = TRUE#,
+  #args = c(
+  #         #"--features=M",
+  #         "--output=tmp",
+  #         "output/results/analysis/jacusa2/preprocessed/lof/neighbors~20_contamination~0.002/cond1_vs_cond2.tsv")
 )
 
 stopifnot(!is.null(opts$options$output))
