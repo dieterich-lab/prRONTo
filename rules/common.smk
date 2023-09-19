@@ -58,7 +58,7 @@ def auto_targets():
   targets.append(join_path("results/plots/mod_summary.pdf"))
   targets.append(join_path("results/plots/read_summary/total.pdf"))
   targets.append(join_path("results/plots/feature_lof_summary.pdf"))
-  targets.append(join_path("results/report/report.pdf"))
+  targets.append(join_path("results/report/report.html"))
 
   return targets
 

@@ -13,5 +13,10 @@ dependencies:
   - r-base
   - knitr
   - rmarkdown
-  # - r-optparse
+  - r-optparse
+  - r-ggplot2
+  - r-xtable
+  - r-tidyverse
+  - r-knitr
+  - r-ggpubr
   # - r-jacusa2helper
