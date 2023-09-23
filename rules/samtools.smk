@@ -68,14 +68,98 @@ rule samtools_coverage:
   shell: "samtools coverage {input} > {output}"
 
 
-def all_bams():
+rule samtools_stats:
+  input: bam="{filename}.bam",
+         ref=REF_FASTA,
+  output: "{filename}_stats.tsv"
+  shell: "samtools stats --ref-seq {input.ref} {input.bam} > {output}"
+
+
+def raw_fnames(suffix):
   fnames = []
-
-  for condition in SAMPLES["condition"].tolist():
+  for condition in SAMPLES["condition"].unique().tolist():
     for replicate in range(1, get_replicates(condition) + 1):
-      fnames.append(join_path(f"data/bams/raw/cond{condition}_rep{replicate}_coverage.tsv"))
-      fnames.append(join_path(f"results/data/bams/preprocessed/cond{condition}_rep{replicate}_coverage.tsv"))
+      fnames.append(join_path(f"data/bams/raw/cond{condition}_rep{replicate}{suffix}"))
 
+  return fnames
+
+
+def preprocessed_fnames(suffix):
+  fnames = []
+  for condition in SAMPLES["condition"].unique().tolist():
+    for replicate in range(1, get_replicates(condition) + 1):
+      fnames.append(join_path(f"results/data/bams/preprocessed/cond{condition}_rep{replicate}{suffix}"))
+
+  return fnames
+
+
+rule samtools_stats_extract_section:
+  input: join_path("{prefix}/cond{condition}_rep{replicate}_stats.tsv"),
+  output: join_path("{prefix}/cond{condition}_rep{replicate}_stats_{section}.tsv"),
+  shell: "cat {input} | grep ^{wildcards.section} | cut -f 2- > {output}"
+
+
+def merge_sections(input, cols, output):
+  def helper(fname):
+    df = pd.read_csv(fname, sep="\t", names = cols)
+    df["fname"] = fname
+    result = re.search(r".+/(raw|preprocessed)/cond([12])_rep([0-9]+)_stats_.+.tsv", fname)
+    if not result:
+      breakpoint()
+    bam_type, cond, repl = result.groups()
+    df["bam_type"] = bam_type
+    df["condition"] = cond
+    df["replicate"] = repl
+    return df
+
+  dfs = [helper(fname) for fname in input]
+  df = pd.concat(dfs, ignore_index=True)
+  df.to_csv(output[0], sep="\t", index=False)
+
+
+rule merge_read_lengths:
+  input: raw_fnames("_stats_RL.tsv") + preprocessed_fnames("_stats_RL.tsv"),
+  output: join_path("results/merged_read_length.tsv"),
+  run:
+    merge_sections(input, ["read_length", "count"], output)
+
+
+rule merge_mapq:
+  input: raw_fnames("_stats_MAPQ.tsv") + preprocessed_fnames("_stats_MAPQ.tsv"),
+  output: join_path("results/merged_read_mapq.tsv"),
+  run:
+    merge_sections(input, ["mapq", "count"], output)
+
+
+rule merge_sn:
+  input: raw_fnames("_stats_SN.tsv") + preprocessed_fnames("_stats_SN.tsv"),
+  output: join_path("results/merged_read_sn.tsv"),
+  run:
+    def helper(fname):
+      df = pd.read_csv(fname, sep="\t", names=["key", "value", "comment"])
+      df["key"] = df["key"].str.replace(":", "")
+      df = df[["key", "value"]].set_index("key", drop=True).transpose()
+      df["fname"] = fname
+      result = re.search(r".+/(raw|preprocessed)/cond([12])_rep([0-9]+)_stats_.+.tsv", fname)
+      if not result:
+        breakpoint()
+      bam_type, cond, repl = result.groups()
+      df["bam_type"] = bam_type
+      df["condition"] = cond
+      df["replicate"] = repl
+
+      return df
+
+    dfs = [helper(fname) for fname in input]
+    df = pd.concat(dfs, ignore_index=True)
+    df = df.convert_dtypes()
+    df.to_csv(output[0], sep="\t", index=False)
+
+def all_bams():
+  fnames = raw_fnames("_coverage.tsv") + preprocessed_fnames("_coverage.tsv")
+
+  for condition in SAMPLES["condition"].unique().tolist():
+    for replicate in range(1, get_replicates(condition) + 1):
       if "downsampling" in config:
         for seed in config["downsampling"]["seed"]:
           for reads in config["downsampling"]["reads"]:
@@ -90,6 +174,7 @@ def all_bams():
   return fnames
 
 
+# TODO rename to coverage
 rule samtools_read_summary:
   input: all_bams()
   output: join_path("results/read_summary.tsv"),

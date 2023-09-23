@@ -1,7 +1,57 @@
-## Read summary
+## Read summary {.tabset}
 
-{{TOTAL}}
+### Read counts {.tabset}
 
-### For each sequence
+#### All sequences
 
-{{SEQUENCE}}
+{% if "downsampling" in config %}
+```{r, fig-read-summary-total, fig.caption=c("Reads stats for combined sequences"), ncol=2, out.width="50%", fig.show="hold"}
+readRDS("../plots/read_summary/total_data.rds") %>%
+  print()
+readRDS("../plots/read_summary/total_downsampling.rds") %>%
+  print()
+```
+{% else %}
+```{r, fig-read-summary-total, fig.caption=c("Reads stats for combined sequences")}
+readRDS("../plots/read_summary/total_data.rds") %>%
+  print()
+```
+{% endif %}
+
+```{r, fig-read-summary-total_down_sampling, fig.align="center", fig.caption=c("TODO"), fig.pos="H"}
+readRDS("../plots/read_summary/total_seq_ids.rds") %>%
+  print()
+```
+
+{% for region in PRONTO["regions"] %}
+#### {{region}}
+
+{% if "downsampling" in config %}
+```{r, fig-read-summary-{{region}}, fig.caption=c("Reads stats for combined sequences"), fig.ncol=2, out.width="50%", fig.show="hold"}
+readRDS("../plots/read_summary/{{region}}_data.rds") %>%
+  print()
+readRDS("../plots/read_summary/{{region}}_downsampling.rds") %>%
+  print()
+```
+{% else %}
+```{r, fig-read-summary-{{region}}, fig.caption=c("Reads stats for combined sequences")}
+readRDS("../plots/read_summary/{{region}}_data.rds") %>%
+  print()
+```
+{% endif %}
+{% endfor %}
+
+
+### Read length
+
+```{r, fig-read-length, fig.caption=c("Read length")}
+readRDS("../plots/read_length_summary.rds") %>%
+  print()
+```
+
+### Mapping quality
+
+```{r, fig-read-mapq, fig.caption=c("Mapping quality")}
+readRDS("../plots/read_mapq_summary.rds") %>%
+  print()
+```

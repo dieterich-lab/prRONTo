@@ -1,7 +1,7 @@
 # TODO TEST
 library(ggplot2)
 library(magrittr)
-
+source(paste0(Sys.getenv("PRONTO_DIR"), "/scripts/pronto_lib.R"))
 
 option_list <- list(
   optparse::make_option(c("-f", "--features"),

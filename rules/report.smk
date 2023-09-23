@@ -1,17 +1,26 @@
+import jinja2
+
+# FIXME remove
 def template(s, mapping):
-  return re.sub("{{(.*?)}}", lambda m: str(mapping[m.group(1)]), s)
+  return s
 
 
 rule report_render:
   input: report=join_path("results/report/report.Rmd"),
          config=join_path("results/report/config.Rmd"),
-         #read_summary=join_path("results/report/read_summary.Rmd"),
+         read_summary=join_path("results/report/read_summary.Rmd"),
          feature_summary=join_path("results/report/feature_summary.Rmd"),
          session=join_path("results/report/session.Rmd"),
+         params=join_path("results/report/params.yaml"),
   output: join_path("results/report/report.html"),
   log: join_path("logs/report/render.log"),
   shell: """
-    Rscript {workflow.basedir}/scripts/render_report.R --format html_document --output {output} {input.report}
+    Rscript {workflow.basedir}/scripts/render_report.R \
+      --params {input.params} \
+      --format html_document \
+      --output {output} \
+      {input.report} \
+      2> {log}
   """
 
 
@@ -58,45 +67,56 @@ def rmd_create_fig(fname, rname, **kwargs):
     """
 
 
-def report_read_summary_template_input(wildcards):
-  targets = {
-      "rmd": f"{workflow.basedir}/report/read_summary.Rmd",
-      "regions": REGIONS,
-      "plot_total": join_path("results/plots/read_summary/total.pdf")}
-  with open(REGIONS, "r") as f:
-    regions = f.readlines()
-
-  targets += {"plot_{region}": join_path("results/plots/read_summary", f"{region}.pdf")
-             for region in regions}
-
-  return targets
+def parse_template(input, params, output):
+  mapping = dict(params)
+  with open(input["rmd"], "r") as in_file:
+    s = in_file.read()
+    t = jinja2.Template(s)
+    r = t.render(**mapping)
+    with open(output[0], "w") as out_file:
+      out_file.write(r)
 
 
 rule report_read_summary_template:
-  input: report_read_summary_template_input
+  input: rmd=f"{workflow.basedir}/report/read_summary.Rmd",
+         regions=REGIONS,
+         rds=FNAMES_READ_SUMMARY_PLOTS +
+             [join_path("results/plots/read_length_summary.rds"),
+              join_path("results/plots/read_mapq_summary.rds"),],
+  output: join_path("results/report/read_summary.Rmd")
   params:
-    mapping={"OUTPUT": join_path("/")},
+    config=dict(config),
+    PRONTO=dict(PRONTO),
   run:
-    mapping = params.mapping + rmd_add_plot(input.plot_total)
-
-    with open(input["rmd"], "r") as in_file:
-      s = in_file.read()
-      d = template(s, params.mapping)
-      with open(output[0], "w") as out_file:
-        out_file.write(d)
+    parse_template(input, params, output)
 
 
 rule report_feature_summary_template:
-  input: f"{workflow.basedir}/report/feature_summary.Rmd",
+  input: rmd=f"{workflow.basedir}/report/feature_summary.Rmd",
+         rds=[fname for fname in FNAMES_READ_SUMMARY_PLOTS if fname.endswith("rds")]
   output: join_path("results/report/feature_summary.Rmd")
-  params:
-    mapping={"OUTPUT": join_path("results/report/")},
   run:
-    with open(input[0], "r") as in_file:
+    with open(input["rmd"], "r") as in_file:
       s = in_file.read()
-      d = template(s, params.mapping)
+      d = template(s, params)
       with open(output[0], "w") as out_file:
         out_file.write(d)
+
+
+rule report_create_params:
+  output: join_path("results/report/params.yaml")
+  params:
+    config=config,
+    pronto=dict(PRONTO),
+  run:
+    d = dict(params)
+    d["meta"] = {
+      "configfile": workflow.configfiles,
+      "pepfile": config["pepfile"],
+      "workdir": os.getcwd(),
+    }
+    with open(output[0], "w") as f:
+       yaml.safe_dump(d, f)
 
 
 rule report_session_template:

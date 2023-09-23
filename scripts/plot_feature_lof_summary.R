@@ -4,9 +4,9 @@
 # density and confidence intervals
 # what features how to combine
 
-
 library(magrittr)
 library(ggplot2)
+source(paste0(Sys.getenv("PRONTO_DIR"), "/scripts/pronto_lib.R"))
 
 option_list <- list(
   optparse::make_option(c("-d", "--device"),
@@ -27,19 +27,12 @@ opts <- optparse::parse_args(
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$args))
 
-df <- read.table(opts$args, header = TRUE, sep = "\t")
-
-downsampling <- stringr::str_match(df$parameters, "seed~(.+)_reads~([0-9]+)") %>%
-  as.data.frame()
-colnames(downsampling) <- c("parameters", "seed", "reads")
-downsampling <- downsampling %>%
-  dplyr::select(-parameters)
-df <- dplyr::bind_cols(df, downsampling)
+df <- read_merged_lof(opts$args)
 
 p <- df %>%
   dplyr::filter(analysis == "analysis") %>%
   dplyr::select(seqnames, pos, strand, dplyr::starts_with("feature_")) %>%
-  tidyr::pivot_longer(c("feature_M", "feature_MDI"), names_to = "feature", values_to = "score") %>%
+  tidyr::pivot_longer(dplyr::starts_with("feature_"), names_to = "feature", values_to = "score") %>%
   dplyr::mutate(feature = gsub("feature_", "", feature)) %>%
   ggplot(aes(x = score, colour = feature)) +
     geom_density() +
@@ -47,10 +40,4 @@ p <- df %>%
     theme_bw() +
     theme(legend.position = "bottom")
 
-ggsave(opts$options$output, p)
-saveRDS(p, paste0(
-                  gsub(
-                       paste0(".", opts$options$device),
-                       "",
-                       opts$options$output),
-                  ".rds"))
+save_plot(p, opts$options$output, opts$options$device)

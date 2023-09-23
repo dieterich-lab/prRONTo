@@ -54,10 +54,13 @@ def auto_targets():
       targets.extend(callback())
 
   targets.append(join_path("results/merged_lof.tsv"))
+  targets.append(join_path("results/merged_read_sn.tsv"))
+  targets.append(join_path("results/plots/read_length_summary.pdf"))
 
   targets.append(join_path("results/plots/mod_summary.pdf"))
   targets.append(join_path("results/plots/read_summary/total.pdf"))
   targets.append(join_path("results/plots/feature_lof_summary.pdf"))
+  targets.append(join_path("results/plots/analysis/feature_summary.pdf"))
   targets.append(join_path("results/report/report.html"))
 
   return targets
@@ -200,8 +203,24 @@ def merged_lof_results():
 rule merge_lof_results:
   input: merged_lof_results()
   output: join_path("results/merged_lof.tsv"),
-  log: join_path("logs/merge_lof_results.log"), # TODO - where to put this
+  log: join_path("logs/merge_lof_results.log"),
   run:
-    dfs = [pd.read_csv(fname, sep="\t") for fname in input]
-    df = pd.concat(dfs, ignore_index=True, )
+    def helper(fname):
+      df = pd.read_csv(fname, sep="\t")
+      df["fname"] = fname
+      result = re.search(r".+/results/([^/]+)/jacusa2/([^/]+)/lof/neighbors~([0-9]+)_contamination~([0-9.,]+)/[^/]+", fname)
+      analysis, bam_prefix, neighbors, contamination = result.groups()
+      df["analysis"] = analysis
+      df["parameters"] = bam_prefix
+      df["lof_neightbors"] = neighbors
+      df["lof_contamination"] = contamination
+      if "seed~" in bam_prefix and "reads~" in bam_prefix:
+        result = re.search(r"seed~(.+)_reads~([0-9]+)", bam_prefix)
+        seed, reads = result.groups()
+        df["downsampling_seed"] = seed
+        df["downsampling_reads"] = reads
+      return df
+
+    dfs = [helper(fname) for fname in input]
+    df = pd.concat(dfs, ignore_index=True)
     df.to_csv(output[0], sep="\t", index=False)

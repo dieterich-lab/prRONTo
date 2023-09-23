@@ -1,15 +1,14 @@
 ---
-title:
-output:
+title: "`r params$doc_title`"
+author: "prRONTo"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(ggh4x)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-```{r, child=c("config.Rmd", "feature_summary.Rmd", "session.Rmd")}
-```
+# {.tabset}
 
-# TODO
-* set title
-* output
+```{r, child=c("read_summary.Rmd", "config.Rmd", "session.Rmd")}
+```
