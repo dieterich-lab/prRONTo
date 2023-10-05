@@ -10,5 +10,5 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 # {.tabset}
 
-```{r, child=c("read_summary.Rmd", "config.Rmd", "session.Rmd")}
+```{r, child=c("feature_summary.Rmd", "read_summary.Rmd", "config.Rmd", "session.Rmd")}
 ```

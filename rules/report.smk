@@ -1,18 +1,14 @@
-import jinja2
-
-# FIXME remove
-def template(s, mapping):
-  return s
+import jinja2 # TODO use snakemake 7 engine
 
 
 rule report_render:
-  input: report=join_path("results/report/report.Rmd"),
-         config=join_path("results/report/config.Rmd"),
-         read_summary=join_path("results/report/read_summary.Rmd"),
-         feature_summary=join_path("results/report/feature_summary.Rmd"),
-         session=join_path("results/report/session.Rmd"),
-         params=join_path("results/report/params.yaml"),
-  output: join_path("results/report/report.html"),
+  input: report=join_path("report/report.Rmd"),
+         config=join_path("report/config.Rmd"),
+         read_summary=join_path("report/read_summary.Rmd"),
+         feature_summary=join_path("report/feature_summary.Rmd"),
+         session=join_path("report/session.Rmd"),
+         params=join_path("report/params.yaml"),
+  output: join_path("report/report.html"),
   log: join_path("logs/report/render.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/render_report.R \
@@ -25,29 +21,24 @@ rule report_render:
 
 
 rule report_template:
-  input: f"{workflow.basedir}/report/report.Rmd",
-  output: join_path("results/report/report.Rmd")
+  input: rmd=f"{workflow.basedir}/report/report.Rmd",
+  output: join_path("report/report.Rmd")
   params:
-    mapping={"OUTPUT": join_path("results/report/")},
+    config=dict(config),
+    PRONTO=dict(PRONTO),
   run:
-    with open(input[0], "r") as in_file:
-      s = in_file.read()
-      d = template(s, params.mapping)
-      with open(output[0], "w") as out_file:
-        out_file.write(d)
+    parse_template(input, params, output)
 
 
 rule report_config_template:
-  input: f"{workflow.basedir}/report/config.Rmd",
-  output: join_path("results/report/config.Rmd")
+  input: rmd=f"{workflow.basedir}/report/config.Rmd",
+         rds=[join_path("plots/mod_summary.rds"), ],
+  output: join_path("report/config.Rmd")
   params:
-    mapping={"OUTPUT": join_path("results/report/")},
+    config=dict(config),
+    PRONTO=dict(PRONTO),
   run:
-    with open(input[0], "r") as in_file:
-      s = in_file.read()
-      d = template(s, params.mapping)
-      with open(output[0], "w") as out_file:
-        out_file.write(d)
+    parse_template(input, params, output)
 
 
 def rmd_create_fig(fname, rname, **kwargs):
@@ -80,10 +71,8 @@ def parse_template(input, params, output):
 rule report_read_summary_template:
   input: rmd=f"{workflow.basedir}/report/read_summary.Rmd",
          regions=REGIONS,
-         rds=FNAMES_READ_SUMMARY_PLOTS +
-             [join_path("results/plots/read_length_summary.rds"),
-              join_path("results/plots/read_mapq_summary.rds"),],
-  output: join_path("results/report/read_summary.Rmd")
+         rds=read_summary_rdfs,
+  output: join_path("report/read_summary.Rmd")
   params:
     config=dict(config),
     PRONTO=dict(PRONTO),
@@ -94,17 +83,16 @@ rule report_read_summary_template:
 rule report_feature_summary_template:
   input: rmd=f"{workflow.basedir}/report/feature_summary.Rmd",
          rds=[fname for fname in FNAMES_READ_SUMMARY_PLOTS if fname.endswith("rds")]
-  output: join_path("results/report/feature_summary.Rmd")
+  output: join_path("report/feature_summary.Rmd")
+  params:
+    config=dict(config),
+    PRONTO=dict(PRONTO),
   run:
-    with open(input["rmd"], "r") as in_file:
-      s = in_file.read()
-      d = template(s, params)
-      with open(output[0], "w") as out_file:
-        out_file.write(d)
+    parse_template(input, params, output)
 
 
 rule report_create_params:
-  output: join_path("results/report/params.yaml")
+  output: join_path("report/params.yaml")
   params:
     config=config,
     pronto=dict(PRONTO),
@@ -120,13 +108,10 @@ rule report_create_params:
 
 
 rule report_session_template:
-  input: f"{workflow.basedir}/report/session.Rmd",
-  output: join_path("results/report/session.Rmd")
+  input: rmd=f"{workflow.basedir}/report/session.Rmd",
+  output: join_path("report/session.Rmd")
   params:
-    mapping={"OUTPUT": join_path("results/report/")},
+    config=dict(config),
+    PRONTO=dict(PRONTO),
   run:
-    with open(input[0], "r") as in_file:
-      s = in_file.read()
-      d = template(s, params.mapping)
-      with open(output[0], "w") as out_file:
-        out_file.write(d)
+    parse_template(input, params, output)

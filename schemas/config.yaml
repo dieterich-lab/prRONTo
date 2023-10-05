@@ -107,33 +107,33 @@ properties:
     required:
       - seed
       - reads
-  mixing:
-    type: object
-    properties:
-      seed:
-        type: array
-        items:
-          type: string
-        uniqueItems: true
-        minItems: 1
-      reads:
-        type: array
-        items:
-          type: integer
-          minimum: 100
-        uniqueItems: true
-        minItems: 1
-      mixing:
-        type: array
-        items:
-          type: number
-          minimum: 0
-          maximum: 1
-        uniqueItems: true
-        minItems: 1
-    required:
-      - seed
-      - reads
-      - mixing
+        #  mixing:
+        #    type: object
+        #    properties:
+        #      seed:
+        #        type: array
+        #        items:
+        #          type: string
+        #        uniqueItems: true
+        #        minItems: 1
+        #      reads:
+        #        type: array
+        #        items:
+        #          type: integer
+        #          minimum: 100
+        #        uniqueItems: true
+        #        minItems: 1
+        #      mixing:
+        #        type: array
+        #        items:
+        #          type: number
+        #          minimum: 0
+        #          maximum: 1
+        #        uniqueItems: true
+        #        minItems: 1
+        #    required:
+        #      - seed
+        #      - reads
+        #      - mixing
 required:
   - pepfile

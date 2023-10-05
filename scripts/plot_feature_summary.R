@@ -7,13 +7,9 @@ option_list <- list(
                         type = "character",
                         help = "Output")
 )
-
-opts <- optparse::parse_args(
-  optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE#,
-  #args = c("--output=tmp/test.pdf",
-  #         "output/results/merged_lof.tsv")
-)
+args = c("--output=tmp/test.pdf",
+         "output/results/merged_lof.tsv")
+opts <- debug_opts(option_list, args)
 
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$args))

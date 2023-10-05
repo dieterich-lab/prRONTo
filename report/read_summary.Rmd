@@ -1,57 +1,124 @@
-## Read summary {.tabset}
+## Read {.tabset}
 
-### Read counts {.tabset}
+### Counts {.tabset}
 
 #### All sequences
 
-{% if "downsampling" in config %}
-```{r, fig-read-summary-total, fig.caption=c("Reads stats for combined sequences"), ncol=2, out.width="50%", fig.show="hold"}
-readRDS("../plots/read_summary/total_data.rds") %>%
-  print()
-readRDS("../plots/read_summary/total_downsampling.rds") %>%
-  print()
-```
-{% else %}
-```{r, fig-read-summary-total, fig.caption=c("Reads stats for combined sequences")}
-readRDS("../plots/read_summary/total_data.rds") %>%
-  print()
-```
-{% endif %}
+##### Observed
 
-```{r, fig-read-summary-total_down_sampling, fig.align="center", fig.caption=c("TODO"), fig.pos="H"}
+```{r, fig-read-summary-total}
+readRDS("../plots/read_summary/total_data.rds") %>%
+  print()
+```
+
+##### Sequence IDs
+
+```{r, fig-read-summary-total-seq-ids}
 readRDS("../plots/read_summary/total_seq_ids.rds") %>%
   print()
 ```
 
-{% for region in PRONTO["regions"] %}
-#### {{region}}
-
 {% if "downsampling" in config %}
-```{r, fig-read-summary-{{region}}, fig.caption=c("Reads stats for combined sequences"), fig.ncol=2, out.width="50%", fig.show="hold"}
-readRDS("../plots/read_summary/{{region}}_data.rds") %>%
-  print()
-readRDS("../plots/read_summary/{{region}}_downsampling.rds") %>%
-  print()
-```
-{% else %}
-```{r, fig-read-summary-{{region}}, fig.caption=c("Reads stats for combined sequences")}
-readRDS("../plots/read_summary/{{region}}_data.rds") %>%
+##### Downsampling
+
+```{r, fig-read-summary-downsampling}
+readRDS("../plots/read_summary/total_downsampling.rds") %>%
   print()
 ```
 {% endif %}
+
+{% for region in PRONTO["regions"] %}
+#### {{region}}
+
+##### Observed
+
+```{r, fig-read-summary-{{region}}}
+readRDS("../plots/read_summary/{{region}}_data.rds") %>%
+  print()
+```
+{% if "downsampling" in config %}
+##### Downsampling
+
+```{r, fig-read-summary-{{region}}-downsampling}
+readRDS("../plots/read_summary/{{region}}_downsampling.rds") %>%
+  print()
+```
+{% endif %}
+
 {% endfor %}
 
+### Mapping
 
-### Read length
+#### Mapped reads
 
-```{r, fig-read-length, fig.caption=c("Read length")}
-readRDS("../plots/read_length_summary.rds") %>%
+```{r, fig-read-reads-mapped}
+readRDS("../plots/samtools/stats/merged_SN_reads_mapped_summary.rds") %>%
   print()
 ```
 
-### Mapping quality
+#### Mapping quality
 
-```{r, fig-read-mapq, fig.caption=c("Mapping quality")}
-readRDS("../plots/read_mapq_summary.rds") %>%
+```{r, fig-read-mapq}
+readRDS("../plots/samtools/stats/merged_MAPQ_summary.rds") %>%
+  print()
+```
+
+#### Zero MAPQ reads
+
+```{r, fig-read-reads-mq0}
+readRDS("../plots/samtools/stats/merged_SN_reads_MQ0_summary.rds") %>%
+  print()
+```
+
+### Properties
+
+#### Read length
+
+```{r, fig-read-length}
+readRDS("../plots/samtools/stats/merged_RL_summary.rds") %>%
+  print()
+```
+
+#### Average length
+
+```{r, fig-read-average-length}
+readRDS("../plots/samtools/stats/merged_SN_average_length_summary.rds") %>%
+  print()
+```
+
+#### Average quality
+
+```{r, fig-read-average-quality}
+readRDS("../plots/samtools/stats/merged_SN_average_quality_summary.rds") %>%
+  print()
+```
+
+#### Reads QC failed
+
+```{r, fig-read-reads-qc-failed}
+readRDS("../plots/samtools/stats/merged_SN_reads_QC_failed_summary.rds") %>%
+  print()
+```
+
+### Substitutions
+
+#### Error rate
+
+```{r, fig-read-error-rate}
+readRDS("../plots/samtools/stats/merged_SN_error_rate_summary.rds") %>%
+  print()
+```
+
+#### Insertion length
+
+```{r, fig-read-insertions}
+readRDS("../plots/samtools/stats/merged_I_summary.rds") %>%
+  print()
+```
+
+#### Deletion length
+
+```{r, fig-read-deletions}
+readRDS("../plots/samtools/stats/merged_D_summary.rds") %>%
   print()
 ```

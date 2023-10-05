@@ -1,22 +1,16 @@
 # TODO
-# outlier
-# known modification
-# targets
-# vicintiy
-# targets, missed modifications
-# ? combine barplot and table or separated
-# FIXME no outliers
+# * outlier
+# * vicintiy
+# * targets, missed modifications
+# * FIXME no outliers
+# * knownmodifcation
 
 library(ggplot2)
 library(magrittr)
+source(paste0(Sys.getenv("PRONTO_DIR"), "/scripts/pronto_lib.R"))
 
 OUTLIER_COL = "#1f77b4"
 INLIER_COL = "#c0c0c0"
-
-#knownmodifcation
-#target
-#vicinity
-
 
 option_list <- list(
   optparse::make_option(c("-d", "--device"),
@@ -29,18 +23,19 @@ option_list <- list(
   optparse::make_option(c("-t", "--targets"),
                         type = "character",
                         help = "','-separted list of targets, e.g.: 18S:20[-22]"),
+  optparse::make_option(c("-n", "--neighboor"),
+                        type = "integer",
+                        default = 0,
+                        help = "Distance to known mod up/downstream"),
   optparse::make_option(c("-o", "--output"),
                         type = "character",
                         help = "Output")
 )
-opts <- optparse::parse_args(
-  optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE#,
-  #args = c(
-  #         "--feature=M",
-  #         "--output=tmp",
-  #         "output/results/analysis/jacusa2/preprocessed/lof/neighbors~20_contamination~0.002/cond1_vs_cond2.tsv")
-)
+args = c("--feature=M",
+         "--output=tmp",
+         "--targets=18S:100",
+         "output/results/analysis/jacusa2/preprocessed/lof/neighbors~20_contamination~0.002/cond1_vs_cond2.tsv")
+opts <- debug_opts(option_list, args)
 
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$options$feature))
@@ -56,7 +51,13 @@ result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
                                          is_outlier ~ as.character(pos))) %>%
   split(.$seqnames)
 
-
+# * targets
+targets <- NULL
+if (!is.null(opts$options$targets)) {
+  targets <- strsplit(opts$options$targets, ",") %>%
+    unlist() %>%
+    GenomicRanges::GRanges()
+}
 
 dir.create(opts$options$output, showWarnings = FALSE)
 for (seq_id in names(result)) {
@@ -79,12 +80,15 @@ for (seq_id in names(result)) {
       labs(x = "Position [nt]", y = feature) +
       theme_bw() +
       theme(legend.position = "bottom")
-  tbl <- data %>%
-    head() %>%
-    dplyr::mutate(coords = paste0(seqnames, ":", pos)) %>%
-    dplyr::select(coords, mod, feature_col) %>%
-    ggpubr::ggtexttable(rows = c(),
-                        cols = c("", tail(colnames(.), n = -1)))
+
+  tbl = "no data"
+  if (nrow(outlier) > 0) {
+    tbl <- outlier %>%
+      dplyr::mutate(coords = paste0(seqnames, ":", pos)) %>%
+      dplyr::select(coords, mod, dplyr::all_of(feature_col)) %>%
+      ggpubr::ggtexttable(rows = c(),
+                          cols = c("", tail(colnames(.), n = -1)))
+  }
   p <- ggpubr::ggarrange(p_barplot, tbl,
                          labels = c("A", "B"),
                          nrow = 2)

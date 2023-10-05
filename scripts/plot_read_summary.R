@@ -11,12 +11,9 @@ option_list <- list(
                         type = "character",
                         help = "Output")
 )
-opts <- optparse::parse_args(
-  optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE#,
-  #args = c("--output=tmp",
-  #         "output/results/read_summary.tsv")
-)
+args = c("--output=tmp", # TODO
+         "debug/results/read_summary.tsv")
+opts = debug_opts(option_list, args)
 
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$args))
@@ -29,9 +26,6 @@ df <- df %>%
     parameters %in% c("raw", "preprocessed") ~ "data",
     grepl("^seed~.+_reads~[0-9]+$", parameters) ~ "downsampling",
     .default = "unknown"))
-
-# TODO
-# (mixing)
 
 downsampling <- stringr::str_match(df$parameters, "seed~(.+)_reads~([0-9]+)") %>%
   as.data.frame()
@@ -50,7 +44,6 @@ plot_data <- function(df) {
       geom_text(aes(label = numreads), position = position_dodge(width = 0.9), angle = 15) +
       labs(x = "conditions and replicates", y = "reads", fill = "reads", colour = "") +
       scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
-      ggtitle("Observed") +
       theme_bw() +
       theme(legend.position = "bottom")
 
@@ -66,7 +59,6 @@ plot_seq_ids <- function(df) {
       geom_text(aes(label = numreads), position = position_dodge(width = 0.9), angle = 15) +
       labs(x = "conditions and replicates", y = "reads", fill = "reads", colour = "") +
       scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
-      ggtitle("Sequence IDs") +
       theme_bw() +
       theme(legend.position = "bottom") +
       facet_wrap(rname ~ .)
@@ -85,7 +77,6 @@ plot_downsampling <- function(df) {
       labs(x = "conditions and replicates", y = "reads", colour = "seed") +
       guides(linetype = "none") +
       scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
-      ggtitle("Downsampling") +
       theme_bw() +
       theme(legend.position = "bottom")
 

@@ -37,5 +37,23 @@ read_merged_lof <- function(fname) {
 }
 
 
-#read_merged_lof <- function(fname) {
-#}
+debug_opts <- function(option_list, args) {
+  if (Sys.getenv("PRONTO_DEBUG") == "TRUE") {
+    write(paste0(rep("*", 80), collapse = ""), stderr())
+    write("* DEBUG! IGNORING CLI, because env PRONTO_DEBUG = TRUE", stderr())
+    write(paste0(rep("*", 80), collapse = ""), stderr())
+    opts <- optparse::parse_args(
+      optparse::OptionParser(option_list = option_list),
+      positional_arguments = TRUE,
+      args = args
+    )
+  } else {
+    opts <- optparse::parse_args(
+      optparse::OptionParser(option_list = option_list),
+      positional_arguments = TRUE
+    )
+  }
+
+  opts
+}
+

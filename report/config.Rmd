@@ -1,7 +1,6 @@
-## Modification summary
+## Modification
 
-```{r, fig-mod-summary, out.width="\\linewidth", echo=FALSE, fig.align="center", fig.cap=c(paste0("Summary of known modifications in file:\n", params$pronto$mods))}
-#knitr::include_graphics("/home/michael/git/prRONTo/test/new_pronto/output/results/plots/mod_summary.pdf")
+```{r, fig-mod-summary}
 readRDS("../plots/mod_summary.rds") %>%
   print()
 ```
@@ -20,8 +19,11 @@ Modifications
 Regions
 : `r params$pronto$regions`
 
+Targets:
+: `r paste(params$pronto$targets, sep = ", ")`
+
 Config file:
-: `r paste(params$meta$configfile, sep=", ")`
+: `r paste(params$meta$configfile, sep = ", ")`
 
 PEP file:
 : `r paste0(params$meta$workdir, "/", params$meta$pepfile)`

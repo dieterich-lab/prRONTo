@@ -39,21 +39,22 @@ rule samtools_downsample_bam:
     shell(cmd + " 2> {log}")
 
 
-rule samtools_mix_bams:
-  input: condA=join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bamA}"),
-         condB=join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bamB}"),
-  output: join_path("results/mixing/bams/seed~{seed}_reads~{reads}/cond1~{fractionA}_and_cond2~{fractionB}.bam"),
-  log: join_path("logs/samtools/mix_bams/seed~{seed}_reads~{reads}/cond1~{fractionA}_and_cond2~{fractionB}.log"),
-  params:
-    condA=lambda wildcards: f"--subsample-seed {wildcards.seed} --subsample {wildcards.fractionA}",
-    condB=lambda wildcards: f"--subsample-seed {wildcards.seed} --subsample {wildcards.fractionB}",
-  shell: """
-    samtools merge -c -p \
-        {output} \
-        <(samtools view {params.condA} {input.condA}) \
-        <(samtools view {params.condB} {input.condB}) \
-        2> {log}
-    """
+# TODO for mixing
+#rule samtools_mix_bams:
+#  input: condA=join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bamA}"),
+#         condB=join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bamB}"),
+#  output: join_path("results/mixing/bams/seed~{seed}_reads~{reads}/cond1~{fractionA}_and_cond2~{fractionB}.bam"),
+#  log: join_path("logs/samtools/mix_bams/seed~{seed}_reads~{reads}/cond1~{fractionA}_and_cond2~{fractionB}.log"),
+#  params:
+#    condA=lambda wildcards: f"--subsample-seed {wildcards.seed} --subsample {wildcards.fractionA}",
+#    condB=lambda wildcards: f"--subsample-seed {wildcards.seed} --subsample {wildcards.fractionB}",
+#  shell: """
+#    samtools merge -c -p \
+#        {output} \
+#        <(samtools view {params.condA} {input.condA}) \
+#        <(samtools view {params.condB} {input.condB}) \
+#        2> {log}
+#    """
 
 
 rule samtools_index_bam:
@@ -117,23 +118,18 @@ def merge_sections(input, cols, output):
   df.to_csv(output[0], sep="\t", index=False)
 
 
-rule merge_read_lengths:
-  input: raw_fnames("_stats_RL.tsv") + preprocessed_fnames("_stats_RL.tsv"),
-  output: join_path("results/merged_read_length.tsv"),
+rule merge_stats_section:
+  input: raw_fnames("_stats_{section}.tsv") + preprocessed_fnames("_stats_{section}.tsv"),
+  output: join_path("results/samtools/stats/merged_{section}.tsv"),
+  params:
+    columns=lambda wildcards: STATS_SECTION2COLUMNS[wildcards.section]
   run:
-    merge_sections(input, ["read_length", "count"], output)
+    merge_sections(input, params.columns, output)
 
 
-rule merge_mapq:
-  input: raw_fnames("_stats_MAPQ.tsv") + preprocessed_fnames("_stats_MAPQ.tsv"),
-  output: join_path("results/merged_read_mapq.tsv"),
-  run:
-    merge_sections(input, ["mapq", "count"], output)
-
-
-rule merge_sn:
+rule merge_stats_sn:
   input: raw_fnames("_stats_SN.tsv") + preprocessed_fnames("_stats_SN.tsv"),
-  output: join_path("results/merged_read_sn.tsv"),
+  output: join_path("results/samtools/stats/merged_SN.tsv"),
   run:
     def helper(fname):
       df = pd.read_csv(fname, sep="\t", names=["key", "value", "comment"])
@@ -155,6 +151,7 @@ rule merge_sn:
     df = df.convert_dtypes()
     df.to_csv(output[0], sep="\t", index=False)
 
+
 def all_bams():
   fnames = raw_fnames("_coverage.tsv") + preprocessed_fnames("_coverage.tsv")
 
@@ -167,9 +164,6 @@ def all_bams():
               join_path("results/downsampling/bams",
                         f"seed~{seed}_reads~{reads}",
                         f"cond{condition}_rep{replicate}_coverage.tsv"))
-
-        if "mixing" in config:
-          pass # TODO implement
 
   return fnames
 
@@ -184,7 +178,6 @@ rule samtools_read_summary:
     for fname in input:
       df = pd.read_csv(fname, sep="\t")
       df["fname"] = fname
-      # TODO what if there is mixing? -> condition, replicate
       result = re.search(r"bams/([^/]+)/cond(\d+)_rep(\d+)_coverage.tsv$", fname)
       parameters, condition, replicate = result.groups()
       df["parameters"] = parameters

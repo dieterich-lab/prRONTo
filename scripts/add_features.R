@@ -18,6 +18,7 @@ option_list <- list(
                         type = "character",
                         help = "Parameters")
 )
+
 opts <- optparse::parse_args(
   optparse::OptionParser(option_list = option_list),
   positional_arguments = TRUE,
@@ -30,7 +31,7 @@ opts <- optparse::parse_args(
 )
 
 stopifnot(!is.null(opts$options$output))
-stopifnot(opts$options$analysis %in% c("analysis", "downsampling", "mixing"))
+stopifnot(opts$options$analysis %in% c("analysis", "downsampling"))
 stopifnot(!is.null(opts$options$comparison))
 stopifnot(nzchar(opts$options$parameters))
 stopifnot(nzchar(opts$options$features))

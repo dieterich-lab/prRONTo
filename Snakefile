@@ -31,10 +31,6 @@ rule downsampling:
   input: downsampling_targets()
 
 
-#rule mixing:
-#  input: mixing_targets()
-
-
 def describe_yaml(fname):
     with open(input[0]) as f:
       schema = yaml.load(f, Loader=yaml.SafeLoader)

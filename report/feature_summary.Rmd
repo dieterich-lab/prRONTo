@@ -1,18 +1,19 @@
-## Feature summary
+## Feature
 
 ### Density for features (analysis)
-```{r, fig-feature-lof-summary, fig.caption=c("TODO")}
+
+```{r, fig-feature-lof-summary}
 readRDS("../plots/feature_lof_summary.rds") %>%
   print()
 ```
 
 M
 : Mismatch score
+
 D
 : Deletion score
+
 I
 : Insertion score
-(M|D|I)i
-: Context score for feature
 
 ### Downsampling

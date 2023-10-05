@@ -1,7 +1,7 @@
 rule plot_mod_summary:
   input: join_path("data/mods.tsv"),
-  output: plot=join_path("results/plots/mod_summary.pdf"),
-          rds=join_path("results/plots/mod_summary.rds"),
+  output: plot=join_path("plots/mod_summary.pdf"),
+          rds=join_path("plots/mod_summary.rds"),
   log: join_path("logs/plot/mod_summary.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/plot_mod_summary.R \
@@ -12,19 +12,6 @@ rule plot_mod_summary:
 
 
 # TODO replicate violin plot with table
-DIR_READ_SUMMARY_PLOTS = join_path("results/plots/read_summary")
-READ_SUMMARY_SUBPLOTS = ["data", "seq_ids", ]
-if "downsampling" in config:
-  READ_SUMMARY_SUBPLOTS.append("downsampling")
-FNAMES_READ_SUMMARY_PLOTS = []
-for region in ["total"] + PRONTO["regions"]:
-  for suffix in ["pdf", "rds"]:
-    FNAMES_READ_SUMMARY_PLOTS.append(f"{DIR_READ_SUMMARY_PLOTS}/{region}.{suffix}")
-    __subplots = list(READ_SUMMARY_SUBPLOTS)
-    if region != "total":
-      __subplots.remove("seq_ids")
-  for subplot in __subplots:
-    FNAMES_READ_SUMMARY_PLOTS.append(f"{DIR_READ_SUMMARY_PLOTS}/{region}_{subplot}.rds")
 rule plot_read_summary:
   input: join_path("results/read_summary.tsv"),
   output: files=FNAMES_READ_SUMMARY_PLOTS,
@@ -40,8 +27,8 @@ rule plot_read_summary:
 
 rule plot_feature_lof_summary:
   input: join_path("results/merged_lof.tsv"),
-  output: plot=join_path("results/plots/feature_lof_summary.pdf"),
-          rdf=join_path("results/plots/feature_lof_summary.rds"),
+  output: plot=join_path("plots/feature_lof_summary.pdf"),
+          rdf=join_path("plots/feature_lof_summary.rds"),
   log: join_path("logs/plot/feature_lof_summary.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/plot_feature_lof_summary.R \
@@ -51,9 +38,10 @@ rule plot_feature_lof_summary:
   """
 
 
+# TODO log path add feature
 rule plot_feature:
   input: join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/lof/neighbors~{neighbors}_contamination~{contamination}/{comparison}.tsv"),
-  output: directory(join_path("results/plots/feature/{ANALYSIS}/{bam_prefix}/neighbors~{neighbors}_contamination~{contamination}/{comparison}/feature~{feature}")),
+  output: directory(join_path("plots/feature/{ANALYSIS}/{bam_prefix}/neighbors~{neighbors}_contamination~{contamination}/{comparison}/feature~{feature}")),
   log: join_path("logs/plot/{ANALYSIS}/{bam_prefix}/neighbors~{neighbors}_contamination~{contamination}/{comparison}/feature~{feature}.log"),
   params:
     targets="" # TODO add targets
@@ -67,42 +55,56 @@ rule plot_feature:
   """
 
 
-rule plot_read_length_summary:
-  input: join_path("results/merged_read_length.tsv"),
-  output: pdf=join_path("results/plots/read_length_summary.pdf"),
-          rds=join_path("results/plots/read_length_summary.rds"),
-  log: join_path("logs/plot/read_length_summary.log"),
+rule plot_stats_section_summary:
+  input: join_path("results/samtools/stats/merged_{section}.tsv"),
+  output: pdf=join_path("plots/samtools/stats/merged_{section}_summary.pdf"),
+          rds=join_path("plots/samtools/stats/merged_{section}_summary.rds"),
+  log: join_path("logs/plot/samtools/stats/merged_{section}_summary.log"),
+  params:
+    xvalue=lambda wildcards: STATS_SECTION2COLUMNS[wildcards.section][0],
+    yvalue=lambda wildcards: STATS_SECTION2COLUMNS[wildcards.section][1]
   shell: """
-    Rscript {workflow.basedir}/scripts/plot_read_length_summary.R \
+    Rscript {workflow.basedir}/scripts/plot_stats_section_summary.R \
       --output {output.pdf} \
+      --xvalue "{params.xvalue}" \
+      --yvalue "{params.yvalue}" \
       {input} \
       2> {log}
   """
 
 
-rule plot_read_mapq_summary:
-  input: join_path("results/merged_read_mapq.tsv"),
-  output: pdf=join_path("results/plots/read_mapq_summary.pdf"),
-          rds=join_path("results/plots/read_mapq_summary.rds"),
-  log: join_path("logs/plot/read_mapq_summary.log"),
-  shell: """
-    Rscript {workflow.basedir}/scripts/plot_read_mapq_summary.R \
-      --output {output.pdf} \
-      {input} \
-      2> {log}
-  """
+use rule plot_stats_section_summary as plot_stats_I_summary with:
+  input: join_path("results/samtools/stats/merged_ID.tsv"),
+  output: pdf=join_path("plots/samtools/stats/merged_I_summary.pdf"),
+          rds=join_path("plots/samtools/stats/merged_I_summary.rds"),
+  log: join_path("logs/plot/samtools/stats/merged_I_summary.log"),
+  params:
+    xvalue=lambda wildcards: STATS_SECTION2COLUMNS["ID"][0],
+    yvalue=lambda wildcards: STATS_SECTION2COLUMNS["ID"][1]
 
 
-rule plot_read_sn_summary:
-  input: join_path("results/merged_read_sn.tsv"),
-  output: pdf=join_path("results/plots/read_sn_{column}_summary.pdf"),
-          rds=join_path("results/plots/read_sn_{column}_summary.rds"),
-  log: join_path("logs/plot/read_sn_{column}_summary.log"),
+use rule plot_stats_section_summary as plot_stats_D_summary with:
+  input: join_path("results/samtools/stats/merged_ID.tsv"),
+  output: pdf=join_path("plots/samtools/stats/merged_D_summary.pdf"),
+          rds=join_path("plots/samtools/stats/merged_D_summary.rds"),
+  log: join_path("logs/plot/samtools/stats/merged_D_summary.log"),
+  params:
+    xvalue=lambda wildcards: STATS_SECTION2COLUMNS["ID"][0],
+    yvalue=lambda wildcards: STATS_SECTION2COLUMNS["ID"][2]
+
+
+rule plot_stats_sn_summary:
+  input: join_path("results/samtools/stats/merged_SN.tsv"),
+  output: pdf=join_path("plots/samtools/stats/merged_SN_{column}_summary.pdf"),
+          rds=join_path("plots/samtools/stats/merged_SN_{column}_summary.rds"),
+  log: join_path("logs/plot/samtools/stats/merged_SN_{column}_summary.log"),
+  params:
+    label=lambda wildcards: STATS_SN_COLUMN2LABEL[wildcards.column]
   shell: """
-    Rscript {workflow.basedir}/scripts/plot_read_sn_summary.R \
+    Rscript {workflow.basedir}/scripts/plot_stats_sn_summary.R \
       --output {output.pdf} \
-      --column {wildcards.column} \
-      --label {wildcards.column} \
+      --column "{params.label}" \
+      --label "{params.label}" \
       {input} \
       2> {log}
   """
@@ -110,7 +112,7 @@ rule plot_read_sn_summary:
 
 rule plot_feature_summary:
   input: join_path("results/merged_lof.tsv"),
-  output: join_path("results/plots/{ANALYSIS}/feature_summary.pdf"),
+  output: join_path("plots/{ANALYSIS}/feature_summary.pdf"),
   log: join_path("logs/plot/{ANALYSIS}/feature_summary.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/plot_feature_summary.R \

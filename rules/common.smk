@@ -3,7 +3,10 @@ import re
 from snakemake.shell import shell
 
 wildcard_constraints:
-  ANALYSIS = "(analysis|downsampling|mixing)",
+  ANALYSIS = "(analysis|downsampling)",
+
+
+ruleorder: plot_stats_sn_summary > plot_stats_section_summary
 
 
 SAMPLES = pep.sample_table
@@ -19,12 +22,53 @@ MODS = join_path("data/mods.tsv")
 REGIONS = join_path("results/data/regions.txt")
 
 
+STATS_SECTION2COLUMNS = {
+  "RL": ["read_length", "count", ],
+  "MAPQ": ["mapq", "count", ],
+  "ID": ["length", "insertion", "deletion", ],
+}
+
+
+STATS_SN_COLUMNS = ["reads mapped",
+          "reads MQ0",
+          "reads QC failed",
+          "error rate",
+          "average length",
+          "average quality",]
+STATS_SN_COLUMN2LABEL = {col.replace(" ", "_"): col for col in STATS_SN_COLUMNS}
+
+
+DIR_READ_SUMMARY_PLOTS = join_path("plots/read_summary")
+READ_SUMMARY_SUBPLOTS = ["data", "seq_ids", ]
+if "downsampling" in config:
+  READ_SUMMARY_SUBPLOTS.append("downsampling")
+FNAMES_READ_SUMMARY_PLOTS = []
+for region in ["total"] + PRONTO["regions"]:
+  for suffix in ["pdf", "rds"]:
+    FNAMES_READ_SUMMARY_PLOTS.append(f"{DIR_READ_SUMMARY_PLOTS}/{region}.{suffix}")
+    __subplots = list(READ_SUMMARY_SUBPLOTS)
+    if region != "total":
+      __subplots.remove("seq_ids")
+  for subplot in __subplots:
+    FNAMES_READ_SUMMARY_PLOTS.append(f"{DIR_READ_SUMMARY_PLOTS}/{region}_{subplot}.rds")
+
+
+# TODO move to common
+def read_summary_rdfs(wildcards):
+  fnames = FNAMES_READ_SUMMARY_PLOTS
+  fnames += [join_path(f"plots/samtools/stats/merged_SN_{col.replace(' ', '_')}_summary.rds")
+             for col in STATS_SN_COLUMNS]
+  fnames += [join_path(f"plots/samtools/stats/merged_{col}_summary.rds")
+             for col in ["RL", "MAPQ", "I", "D"]]
+
+  return fnames
+
+
 def analysis_targets():
   targets = analysis_lof_results()
   targets.extend(analysis_feature_plots())
 
   return targets
-
 
 
 def downsampling_targets():
@@ -36,16 +80,8 @@ def downsampling_targets():
   return targets
 
 
-def mixing_targets():
-  if not "mixing" in config:
-    return ""
-
-  return [] # pass
-
-
 def auto_targets():
   key2callback = {
-    "mixing": mixing_targets,
     "downsampling": downsampling_targets,
   }
   targets = analysis_targets()
@@ -54,14 +90,14 @@ def auto_targets():
       targets.extend(callback())
 
   targets.append(join_path("results/merged_lof.tsv"))
-  targets.append(join_path("results/merged_read_sn.tsv"))
-  targets.append(join_path("results/plots/read_length_summary.pdf"))
+  targets.append(join_path("results/samtools/stats/merged_SN.tsv"))
+  # FIXME targets.append(join_path("results/plots/read_length_summary.pdf"))
 
-  targets.append(join_path("results/plots/mod_summary.pdf"))
-  targets.append(join_path("results/plots/read_summary/total.pdf"))
-  targets.append(join_path("results/plots/feature_lof_summary.pdf"))
-  targets.append(join_path("results/plots/analysis/feature_summary.pdf"))
-  targets.append(join_path("results/report/report.html"))
+  targets.append(join_path("plots/mod_summary.pdf"))
+  targets.append(join_path("plots/read_summary/total.pdf"))
+  targets.append(join_path("plots/feature_lof_summary.pdf"))
+  targets.append(join_path("plots/analysis/feature_summary.pdf"))
+  targets.append(join_path("report/report.html"))
 
   return targets
 
@@ -162,7 +198,7 @@ def analysis_feature_plots():
     contamination = lof["contamination"]
     for feature in config["jacusa2"]["features"]:
       targets.append(
-          join_path("results/plots/feature/analysis",
+          join_path("plots/feature/analysis",
                     "preprocessed",
                     f"neighbors~{neighbors}_contamination~{contamination}",
                     "cond1_vs_cond2",
@@ -193,9 +229,6 @@ def merged_lof_results():
 
   if "downsampling" in config:
     targets.extend(downsampling_lof_results())
-
-    if "mixing" in config:
-      pass # TODO mixing
 
   return targets
 
