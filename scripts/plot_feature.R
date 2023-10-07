@@ -33,7 +33,6 @@ option_list <- list(
 )
 args = c("--feature=M",
          "--output=tmp",
-         "--targets=18S:100",
          "output/results/analysis/jacusa2/preprocessed/lof/neighbors~20_contamination~0.002/cond1_vs_cond2.tsv")
 opts <- debug_opts(option_list, args)
 
@@ -43,10 +42,11 @@ stopifnot(!is.null(opts$args))
 
 feature <- opts$options$feature
 feature_col <- paste0("feature_", feature)
+lof_outlier_col <- paste0("lof_outlier_", feature)
 
 result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
   dplyr::mutate(is_mod = dplyr::case_when(mod != "*" ~ TRUE, .default = FALSE),
-                is_outlier = dplyr::case_when(!!rlang::ensym(feature_col) == 1 ~ TRUE, .default = FALSE),
+                is_outlier = dplyr::case_when(.data[[lof_outlier_col]] == 1 ~ TRUE, .default = FALSE),
                 label = dplyr::case_when(is_mod & is_outlier ~ paste(pos, mod),
                                          is_outlier ~ as.character(pos))) %>%
   split(.$seqnames)
@@ -66,17 +66,18 @@ for (seq_id in names(result)) {
     dplyr::filter(is_outlier == TRUE)
 
   p_barplot <- data %>%
-    ggplot(aes(x = pos, y = !!rlang::ensym(feature_col), colour = is_outlier)) +
+    ggplot(aes(x = pos, y = .data[[feature_col]], colour = is_outlier)) +
       geom_hline(aes(yintercept = 0)) +
       geom_segment(aes(x = pos,
-                       y = !!rlang::ensym(feature_col),
+                       y = .data[[feature_col]],
                        xend = pos,
-                       yend = !!rlang::ensym(feature_col) - !!rlang::ensym(feature_col))) +
+                       yend = .data[[feature_col]] - .data[[feature_col]])) +
       geom_point(data = outlier, size = 3) +
       geom_text(data = outlier,
                 mapping = aes(label = label),
                 hjust = 0, vjust = 0) +
       scale_colour_manual(values = c(INLIER_COL, OUTLIER_COL)) +
+      guides(colour= guide_legend(title = "is outlier")) +
       labs(x = "Position [nt]", y = feature) +
       theme_bw() +
       theme(legend.position = "bottom")
@@ -95,5 +96,4 @@ for (seq_id in names(result)) {
   output <- paste0(opts$options$output, "/", seq_id, ".", opts$options$device)
   ggsave(output, p, width = 20, height = 10)
   saveRDS(p, paste0(opts$options$output, "/", seq_id, ".rds"))
-  print(p)
 }

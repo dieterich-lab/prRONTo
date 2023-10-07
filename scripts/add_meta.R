@@ -33,10 +33,6 @@ args <- c(
   "test/results/downsampling/jacusa2/seed~3_reads~200/cond1_vs_cond2_scores.tsv")
 opts <- debug_opts(option_list, args)
 
-print(opts)
-print(is.null(opts$options$fasta))
-print(is.null(opts$options$context))
-
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$options$mods) || !is.null(opts$options$fasta))
 stopifnot(!(is.null(opts$options$fasta) && !is.null(opts$options$context)))

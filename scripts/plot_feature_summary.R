@@ -42,4 +42,4 @@ p <- filtered %>%
   theme_bw() +
   theme(legend.position = "bottom")
 
-save_plot(p, opts$options$output)
+save_plot(p, opts$options$output, "pdf")

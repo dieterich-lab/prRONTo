@@ -1,6 +1,32 @@
-## Feature
+## Feature {.tabset}
 
-### Density for features (analysis)
+### Results {.tabset}
+
+{% for region in PRONTO["regions"] %}
+#### {{region}} {.tabset}
+{% for feature in config["jacusa2"]["features"] %}
+##### {{feature}}
+{% for lof in config["lof"] %}
+###### neighbors~{{lof["neighbors"]}}, contamination~{{lof["contamination"]}} 
+```{r, fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}}
+readRDS("../plots/feature/analysis/preprocessed/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/cond1_vs_cond2/feature~{{feature}}/{{region}}.rds") %>%
+  print()
+```
+
+{% endfor %}
+{% endfor %}
+{% endfor %}
+
+### Summary
+
+#### Overlap of outliers
+
+```{r, fig-feature-feature-overlap}
+readRDS("../plots/analysis/feature_summary.rds") %>%
+  print()
+```
+
+#### Density for features (analysis)
 
 ```{r, fig-feature-lof-summary}
 readRDS("../plots/feature_lof_summary.rds") %>%
@@ -15,5 +41,3 @@ D
 
 I
 : Insertion score
-
-### Downsampling

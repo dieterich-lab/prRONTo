@@ -80,9 +80,11 @@ rule report_read_summary_template:
     parse_template(input, params, output)
 
 
+# FIXME rds
 rule report_feature_summary_template:
   input: rmd=f"{workflow.basedir}/report/feature_summary.Rmd",
-         rds=[fname for fname in FNAMES_READ_SUMMARY_PLOTS if fname.endswith("rds")]
+         rds=[fname for fname in FNAMES_READ_SUMMARY_PLOTS if fname.endswith("rds")] +
+             [join_path("plots/analysis/feature_summary.rds"), ]
   output: join_path("report/feature_summary.Rmd")
   params:
     config=dict(config),

@@ -112,11 +112,12 @@ rule plot_stats_sn_summary:
 
 rule plot_feature_summary:
   input: join_path("results/merged_lof.tsv"),
-  output: join_path("plots/{ANALYSIS}/feature_summary.pdf"),
+  output: pdf=join_path("plots/{ANALYSIS}/feature_summary.pdf"),
+          rds=join_path("plots/{ANALYSIS}/feature_summary.rds"),
   log: join_path("logs/plot/{ANALYSIS}/feature_summary.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/plot_feature_summary.R \
-      --output {output} \
+      --output {output.pdf} \
       {input} \
       2> {log}
   """

@@ -33,16 +33,20 @@ def add_lof_score(df, features, filter_median, lof_params):
     ohat = lof.fit_predict(df[cols])
     scores = lof.negative_outlier_factor_
     df[new_col_lof] = scores * -1 # make scores positive
-    df[new_col_outlier] = ohat * -1 # flip class labels
+    df[new_col_outlier] = -1 # flip class labels: -1 -> inlier
+
+    smaller = df[cols].median() > df[cols]
+    # reduce
+    smaller = smaller.eval("&".join(smaller))
+    sorted_scores = ~smaller[np.argsort(scores)] # sorted scores and boolean if bigger than median
+    n_outliers = round(len(scores) * lof_params["contamination"])
     if filter_median:
-      smaller = df[cols].median() > df[cols]
-      # reduce
-      smaller = smaller.eval("&".join(smaller))
-      # smaller and outlier
-      smaller = smaller & df[new_col_outlier] == 1
-      if any(smaller):
-        df.loc[smaller, [new_col_outlier]] = 0
-      # FIXME own calculation of outlier
+      # own calculation of outlier to filter by median
+      i_outliers = sorted_scores.index[sorted_scores == True]
+    else:
+      i_outliers = sorted_scores.index
+    # FIXME
+    df.loc[i_outliers[0:n_outliers], new_col_outlier] = 1
 
   return df
 
