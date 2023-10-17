@@ -3,7 +3,7 @@ import re
 from snakemake.shell import shell
 
 wildcard_constraints:
-  ANALYSIS = "(analysis|downsampling)",
+  ANALYSIS = "(original|downsampling)",
 
 
 ruleorder: plot_stats_sn_summary > plot_stats_section_summary
@@ -11,6 +11,15 @@ ruleorder: plot_stats_sn_summary > plot_stats_section_summary
 
 SAMPLES = pep.sample_table
 PRONTO = pep.config.pronto
+CONDITIONS = [PRONTO["condition1"], PRONTO["condition2"]]
+# TODO config["pepfile"], samples table
+
+def get_replicates(index):
+  return len(SAMPLES.loc[SAMPLES["condition"] == CONDITIONS[index - 1], "filename"].tolist())
+
+
+REPLICATES1 = get_replicates(1)
+REPLICATES2 = get_replicates(2)
 
 
 def join_path(*e):
@@ -22,6 +31,7 @@ MODS = join_path("data/mods.tsv")
 REGIONS = join_path("results/data/regions.txt")
 
 
+# TODO change label
 STATS_SECTION2COLUMNS = {
   "RL": ["read_length", "count", ],
   "MAPQ": ["mapq", "count", ],
@@ -64,9 +74,9 @@ def read_summary_rdfs(wildcards):
   return fnames
 
 
-def analysis_targets():
-  targets = analysis_lof_results()
-  targets.extend(analysis_feature_plots())
+def original_targets():
+  targets = original_lof_results()
+  targets.extend(original_feature_plots())
 
   return targets
 
@@ -84,11 +94,12 @@ def auto_targets():
   key2callback = {
     "downsampling": downsampling_targets,
   }
-  targets = analysis_targets()
+  targets = original_targets()
   for key, callback in key2callback.items():
     if key in config:
       targets.extend(callback())
 
+  # FIXME dependency in plot
   targets.append(join_path("results/merged_lof.tsv"))
   targets.append(join_path("results/samtools/stats/merged_SN.tsv"))
   # FIXME targets.append(join_path("results/plots/read_length_summary.pdf"))
@@ -96,7 +107,7 @@ def auto_targets():
   targets.append(join_path("plots/mod_summary.pdf"))
   targets.append(join_path("plots/read_summary/total.pdf"))
   targets.append(join_path("plots/feature_lof_summary.pdf"))
-  targets.append(join_path("plots/analysis/feature_summary.pdf"))
+  targets.append(join_path("plots/original/feature_summary.pdf"))
   targets.append(join_path("report/report.html"))
 
   return targets
@@ -132,14 +143,14 @@ rule include_mods:
 
 # FIXME what if there is a replicate column in SAMPLES
 def create_include_bam_rules(condition: int):
-  fnames = SAMPLES.loc[SAMPLES["condition"] == str(condition), "filename"]
+  fnames = SAMPLES.loc[SAMPLES["condition"] == CONDITIONS[condition - 1], "filename"]
   for i, fname in enumerate(fnames, start=1):
     rule:
       name: f"dyn_include_bam_cond{condition}_rep{i}"
       input: fname
       output: join_path(f"data/bams/raw/cond{condition}_rep{i}.bam")
       params:
-        include=config.get("include", {}).get("bams")
+        include="copy" # FIXME include=config.get("include", {}).get("bams")
       run:
         if params.include == "copy":
           cmd = "cp"
@@ -150,7 +161,7 @@ def create_include_bam_rules(condition: int):
 
 
 # create dynamically rules to include raw bams for all conditions
-for condition in SAMPLES["condition"].unique():
+for condition in [1, 2]:
   create_include_bam_rules(condition)
 
 
@@ -164,25 +175,23 @@ rule create_regions:
           f.write(f"{region}\n")
 
 
-def get_replicates(condition):
-  return len(SAMPLES.loc[SAMPLES["condition"] == str(condition), "filename"].tolist())
 
 
-rule link_analysis_bams:
+rule link_original_bams:
   input: join_path("results/data/bams/preprocessed/{filename}.bam"),
-  output: join_path("results/analysis/bams/preprocessed/{filename}.bam"),
+  output: join_path("results/original/bams/preprocessed/{filename}.bam"),
   shell: """
     ln -sf ../../../data/bams/preprocessed/{wildcards.filename}.bam {output}
   """
 
 
-def analysis_lof_results():
+def original_lof_results():
   targets = []
   for lof in config["lof"]:
     neighbors = lof["neighbors"]
     contamination = lof["contamination"]
     targets.append(
-        join_path("results/analysis/jacusa2",
+        join_path("results/original/jacusa2",
                   "preprocessed",
                   "lof",
                   f"neighbors~{neighbors}_contamination~{contamination}",
@@ -190,19 +199,33 @@ def analysis_lof_results():
 
   return targets
 
-# TODO add region
-def analysis_feature_plots():
+
+def original_feature_plots():
   targets = []
   for lof in config["lof"]:
     neighbors = lof["neighbors"]
     contamination = lof["contamination"]
     for feature in config["jacusa2"]["features"]:
-      targets.append(
-          join_path("plots/feature/analysis",
-                    "preprocessed",
-                    f"neighbors~{neighbors}_contamination~{contamination}",
-                    "cond1_vs_cond2",
-                    f"feature~{feature}"))
+      targets.append(join_path("plots/feature/original",
+                               "preprocessed",
+                               f"neighbors~{neighbors}_contamination~{contamination}",
+                               f"feature~{feature}"))
+
+  return targets
+
+
+def downsampling_feature_plots():
+  targets = []
+  for seed in config["downsampling"]["seed"]:
+    for lof in config["lof"]:
+      neighbors = lof["neighbors"]
+      contamination = lof["contamination"]
+      for reads in config["downsampling"]["reads"]:
+        for feature in config["jacusa2"]["features"]:
+          targets.append(join_path("plots/feature/downsampling",
+                                   f"seed~{seed}_reads~{reads}",
+                                   f"neighbors~{neighbors}_contamination~{contamination}",
+                                   f"feature~{feature}"))
 
   return targets
 
@@ -224,8 +247,24 @@ def downsampling_lof_results():
   return targets
 
 
-def merged_lof_results():
-  targets = analysis_lof_results()
+def downsampling_summary_plots():
+  targets = []
+  for regiono in PRONTO["regions"]:
+    for lof in config["lof"]:
+      neighbors = lof["neighbors"]
+      contamination = lof["contamination"]
+      for feature in config["jacusa2"]["features"]:
+        targets.append(join_path("plots/downsampling_summary",
+                                 f"neighbors~{neighbors}_contamination~{contamination}",
+                                 f"feature~{feature}",
+                                 f"{region}.pdf"))
+
+  return targets
+
+
+
+def fnames_lof_results():
+  targets = original_lof_results()
 
   if "downsampling" in config:
     targets.extend(downsampling_lof_results())
@@ -234,7 +273,7 @@ def merged_lof_results():
 
 
 rule merge_lof_results:
-  input: merged_lof_results()
+  input: fnames_lof_results()
   output: join_path("results/merged_lof.tsv"),
   log: join_path("logs/merge_lof_results.log"),
   run:
@@ -245,7 +284,7 @@ rule merge_lof_results:
       analysis, bam_prefix, neighbors, contamination = result.groups()
       df["analysis"] = analysis
       df["parameters"] = bam_prefix
-      df["lof_neightbors"] = neighbors
+      df["lof_neighbors"] = neighbors
       df["lof_contamination"] = contamination
       if "seed~" in bam_prefix and "reads~" in bam_prefix:
         result = re.search(r"seed~(.+)_reads~([0-9]+)", bam_prefix)

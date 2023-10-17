@@ -27,7 +27,7 @@ In the following a section from `examples/data/human_rrna.tsv`:
 
 # Usage
 ```
-snakemake -c 1 -f <SNAKEFILE> --pepfile <PEPFILE> (analysis|downsampling)
+snakemake -c 1 -f <SNAKEFILE> --pepfile <PEPFILE> (original|downsampling)
 ```
 
 ## Options

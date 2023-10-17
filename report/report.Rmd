@@ -4,9 +4,27 @@ author: "prRONTo"
 ---
 
 ```{r setup, include=FALSE}
-library(ggh4x)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
+
+<a href="https://github.com/dieterich-lab/prRONT" target="_blank">
+```{r, echo=FALSE}
+htmltools::img(src = "{{ basedir }}/report/lab_logo.png",
+               alt = "logo",
+               style = "width: 90px; float: left; padding:10px;")
+```
+</a>
+
+# <a href="https://github.com/dieterich-lab/prRONT" target="_blank">prRONTo</a>
+
+<br/>
+<br/>
+
+{% if pep["project"] %}
+### Project: TODO
+{% endif %}
+#### Conditions: {{ PRONTO["condition1"] }} vs. {{ PRONTO["condition2"] }}
+#### Report created: `r format(Sys.time(), format = "%Y-%m-%d %H:%M")`
 
 # {.tabset}
 

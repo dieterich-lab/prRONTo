@@ -26,6 +26,8 @@ rule report_template:
   params:
     config=dict(config),
     PRONTO=dict(PRONTO),
+    pep=pep,
+    basedir=workflow.basedir
   run:
     parse_template(input, params, output)
 
@@ -37,29 +39,14 @@ rule report_config_template:
   params:
     config=dict(config),
     PRONTO=dict(PRONTO),
+    basedir=workflow.basedir
   run:
     parse_template(input, params, output)
 
 
-def rmd_create_fig(fname, rname, **kwargs):
-    kwargs.setdefault("echo", "FALSE")
-    kwargs.setdefault("message", "FALSE")
-    kwargs.setdefault("fig.aling", "'center'")
-    kwargs.setdefault("fig.caption", "''")
-    kwargs.setdefault("out.width", "'0.75\\linewidth'")
-    kwargs.setdefault("fig.pos", "'H'")
-
-    opts = [f"{key}={value}" for key, value in kwargs.items()]
-
-    return """
-    ```r {rname}, ",".join(opts)
-    knitr::include_graphics({fname}")
-    ```
-    """
-
-
 def parse_template(input, params, output):
   mapping = dict(params)
+
   with open(input["rmd"], "r") as in_file:
     s = in_file.read()
     t = jinja2.Template(s)
@@ -76,19 +63,35 @@ rule report_read_summary_template:
   params:
     config=dict(config),
     PRONTO=dict(PRONTO),
+    basedir=workflow.basedir
   run:
     parse_template(input, params, output)
 
 
-# FIXME rds
+# FIXME rds **
+# path and expand (ANALYSIS, bam_prefix, neighbors, contamination, comparison, feature, seq_id, suffix
 rule report_feature_summary_template:
   input: rmd=f"{workflow.basedir}/report/feature_summary.Rmd",
-         rds=[fname for fname in FNAMES_READ_SUMMARY_PLOTS if fname.endswith("rds")] +
-             [join_path("plots/analysis/feature_summary.rds"), ]
+         rds=[original_feature_plots()] +
+             [downsampling_feature_plots()] +
+             [downsampling_summary_plots()] +
+             [join_path("plots/original/feature_summary.rds"), ]
   output: join_path("report/feature_summary.Rmd")
   params:
     config=dict(config),
     PRONTO=dict(PRONTO),
+    basedir=workflow.basedir
+  run:
+    parse_template(input, params, output)
+
+
+rule report_session_template:
+  input: rmd=f"{workflow.basedir}/report/session.Rmd",
+  output: join_path("report/session.Rmd")
+  params:
+    config=dict(config),
+    PRONTO=dict(PRONTO),
+    basedir=workflow.basedir
   run:
     parse_template(input, params, output)
 
@@ -97,7 +100,8 @@ rule report_create_params:
   output: join_path("report/params.yaml")
   params:
     config=config,
-    pronto=dict(PRONTO),
+    PRONTO=dict(PRONTO),
+    basedir=workflow.basedir
   run:
     d = dict(params)
     d["meta"] = {
@@ -107,13 +111,3 @@ rule report_create_params:
     }
     with open(output[0], "w") as f:
        yaml.safe_dump(d, f)
-
-
-rule report_session_template:
-  input: rmd=f"{workflow.basedir}/report/session.Rmd",
-  output: join_path("report/session.Rmd")
-  params:
-    config=dict(config),
-    PRONTO=dict(PRONTO),
-  run:
-    parse_template(input, params, output)

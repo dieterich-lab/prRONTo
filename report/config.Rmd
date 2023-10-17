@@ -1,32 +1,16 @@
-## Modification
+## Modifications {.tabset}
+
+### Regions: All
+
+Distribution of known RNA modifications:
 
 ```{r, fig-mod-summary}
 readRDS("../plots/mod_summary.rds") %>%
   print()
 ```
 
-* TODO -> covered modifications
+<!-- TODO covered modifications -->
+
+<!-- TODO total and per region -->
 
 
-## Config
-
-Reference FASTA
-: `r params$pronto$ref`
-
-Modifications
-: `r params$pronto$mods`
-
-Regions
-: `r params$pronto$regions`
-
-Targets:
-: `r paste(params$pronto$targets, sep = ", ")`
-
-Config file:
-: `r paste(params$meta$configfile, sep = ", ")`
-
-PEP file:
-: `r paste0(params$meta$workdir, "/", params$meta$pepfile)`
-
-Output
-: `r paste0(params$meta$workdir, "/", params$meta$output)`

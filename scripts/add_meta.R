@@ -44,24 +44,24 @@ add_targets <- function(result, targets) {
     unlist() %>%
     GenomicRanges::GRanges()
 
-  GenomicRanges::mcols(result)["is_target"] <- FALSE
 
   suppressWarnings({
     result %>%
       plyranges::join_overlap(targets)})
 }
 
+# TODO test
 add_neighborhood <- function(result, mods, neighborhood) {
   mods <- mods %>%
     IRanges::resize(width = 2 * neighborhood + 1, fix = "center")
   GenomicRanges::mcols(df) <- NULL
   mods <- mods %>%
-    plyranges::mutate(is_in_neighborhood = TRUE)
+    plyranges::mutate(is_in_neighborhood = 1)
 
   suppressWarnings({
     result %>%
       plyranges::join_overlap_left(mods) %>%
-      plyranges::mutate(is_in_neighborhood = tidyr::replace_na(is_in_neighborhood, FALSE))})
+      plyranges::mutate(is_in_neighborhood = tidyr::replace_na(is_in_neighborhood, 0))})
 }
 
 add_ref_context <- function(result, fasta_fname, context) {
@@ -99,13 +99,16 @@ result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
   dplyr::mutate(start = pos, end = pos) %>%
   GenomicRanges::GRanges()
 
+GenomicRanges::mcols(result)["is_modified"] <- 0
+ GenomicRanges::mcols(result)["is_in_neighborhood"] <- 0
 if (!is.null(opts$options$mods)) {
   opt_cols <- c(opt_cols, "mod")
 
   mods <- get_mods(opts$options$mods)
   result <- add_mods(result, mods) %>%
     plyranges::mutate(
-      mod = replace(mod, is.na(mod), "*")
+      mod = replace(mod, is.na(mod), "*"),
+      is_modified = dplyr::case_match(mod, "*" ~ 0, .default = 1)
     )
   if (!is.null(opts$options$neighborhood)) {
     opt_cols <- c(opt_cols, "is_in_neighborhood")
@@ -117,7 +120,11 @@ if (!is.null(opts$options$fasta)) {
   opt_cols <- c(opt_cols, "ref_context")
 
   result <- add_ref_context(result, opts$options$fasta, opts$options$context)
-  head(result$ref_context)
+}
+
+GenomicRanges::mcols(result)["is_target"] <- 0
+if (!is.null(opts$options$targets)) {
+  results <- add_targets(targets)
 }
 
 df <- result %>%

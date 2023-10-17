@@ -1,6 +1,6 @@
-description: pRONTo PEP schema
-  #imports:
-  #- http://schema.databio.org/pep/2.0.0.yaml
+description: prRONTo PEP schema
+imports:
+  - http://schema.databio.org/pep/2.0.0.yaml
 
 properties:
   samples:
@@ -10,18 +10,22 @@ properties:
       properties:
         condition:
           type: string
-          enum: ["1", "2"]
         filename:
           type: string
       required:
         - condition
         - filename
+
   config:
     type: object
     properties:
       pronto:
         type: object
         properties:
+          condition1:
+            type: string
+          condition2:
+            type: string
           output_dir:
             type: string
             description: Output directory
@@ -41,6 +45,8 @@ properties:
               type: string
             uniqueItems: true
         required:
+          - condition1
+          - condition2
           - output
           - ref
           - mods

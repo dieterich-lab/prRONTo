@@ -16,8 +16,9 @@ dependencies:
   - r-xtable
   - r-tidyverse
   - r-knitr
+  - r-kableExtra
   - r-ggpubr
-  - r-ggh4x
-  - r-ggupset
+  - r-complexupset
   - bioconductor-plyranges
   # - r-jacusa2helper
+  #- r-ggh4x

@@ -31,7 +31,7 @@ opts <- optparse::parse_args(
 )
 
 stopifnot(!is.null(opts$options$output))
-stopifnot(opts$options$analysis %in% c("analysis", "downsampling"))
+stopifnot(opts$options$analysis %in% c("original", "downsampling"))
 stopifnot(!is.null(opts$options$comparison))
 stopifnot(nzchar(opts$options$parameters))
 stopifnot(nzchar(opts$options$features))

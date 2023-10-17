@@ -26,6 +26,7 @@ save_plot <- function(p, fname, suffix = "", ...) {
 
 read_merged_lof <- function(fname) {
   df <- read.table(opts$args, header = TRUE, sep = "\t")
+
   downsampling <- stringr::str_match(df$parameters, "seed~(.+)_reads~([0-9]+)") %>%
     as.data.frame()
   colnames(downsampling) <- c("parameters", "seed", "reads")

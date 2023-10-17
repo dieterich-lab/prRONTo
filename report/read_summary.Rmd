@@ -1,10 +1,10 @@
-## Read {.tabset}
+## Reads {.tabset}
 
 ### Counts {.tabset}
 
-#### All sequences
+#### Regions: All
 
-##### Observed
+##### Original
 
 ```{r, fig-read-summary-total}
 readRDS("../plots/read_summary/total_data.rds") %>%
@@ -30,7 +30,7 @@ readRDS("../plots/read_summary/total_downsampling.rds") %>%
 {% for region in PRONTO["regions"] %}
 #### {{region}}
 
-##### Observed
+##### Downsampling
 
 ```{r, fig-read-summary-{{region}}}
 readRDS("../plots/read_summary/{{region}}_data.rds") %>%
@@ -66,8 +66,13 @@ readRDS("../plots/samtools/stats/merged_MAPQ_summary.rds") %>%
 #### Zero MAPQ reads
 
 ```{r, fig-read-reads-mq0}
-readRDS("../plots/samtools/stats/merged_SN_reads_MQ0_summary.rds") %>%
-  print()
+p <- readRDS("../plots/samtools/stats/merged_SN_reads_MQ0_summary.rds")
+pg <- ggplot2::ggplot_build(p)
+if (!all(pg$data[[1]]$y == 0)) {
+  print(p)
+} else {
+  cat("Not applicable")
+}
 ```
 
 ### Properties
@@ -96,8 +101,13 @@ readRDS("../plots/samtools/stats/merged_SN_average_quality_summary.rds") %>%
 #### Reads QC failed
 
 ```{r, fig-read-reads-qc-failed}
-readRDS("../plots/samtools/stats/merged_SN_reads_QC_failed_summary.rds") %>%
-  print()
+p <- readRDS("../plots/samtools/stats/merged_SN_reads_QC_failed_summary.rds")
+pg <- ggplot2::ggplot_build(p)
+if (!all(pg$data[[1]]$y == 0)) {
+  print(p)
+} else {
+  cat("Not applicable")
+}
 ```
 
 ### Substitutions

@@ -9,8 +9,6 @@ library(ggplot2)
 library(magrittr)
 source(paste0(Sys.getenv("PRONTO_DIR"), "/scripts/pronto_lib.R"))
 
-OUTLIER_COL = "#1f77b4"
-INLIER_COL = "#c0c0c0"
 
 option_list <- list(
   optparse::make_option(c("-d", "--device"),
@@ -45,10 +43,13 @@ feature_col <- paste0("feature_", feature)
 lof_outlier_col <- paste0("lof_outlier_", feature)
 
 result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
-  dplyr::mutate(is_mod = dplyr::case_when(mod != "*" ~ TRUE, .default = FALSE),
-                is_outlier = dplyr::case_when(.data[[lof_outlier_col]] == 1 ~ TRUE, .default = FALSE),
-                label = dplyr::case_when(is_mod & is_outlier ~ paste(pos, mod),
-                                         is_outlier ~ as.character(pos))) %>%
+  dplyr::mutate(is_outlier = dplyr::case_when(.data[[lof_outlier_col]] == 1 ~ TRUE, .default = FALSE),
+                label = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ paste(pos,"(", mod, ")"),
+                                         is_modified == 0 & is_outlier == 1 ~ as.character(pos)),
+                outlier_type = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ "known modification",
+                                                is_modified == 0 & is_outlier == 1 ~ "unknown",
+                                                is_in_neighborhood == 1 & is_outlier == 1 ~ "modification in vicinity",
+                                                .default = "inlier")) %>%
   split(.$seqnames)
 
 # * targets
@@ -66,7 +67,11 @@ for (seq_id in names(result)) {
     dplyr::filter(is_outlier == TRUE)
 
   p_barplot <- data %>%
-    ggplot(aes(x = pos, y = .data[[feature_col]], colour = is_outlier)) +
+    ggplot(aes(x = pos, y = .data[[feature_col]], colour = outlier_type)) +
+      scale_colour_manual(values = c("known modification" = "#66c2a5",
+                            "unknown" = "#fc8d62",
+                            "modification in vicinity" = "#8da0cb",
+                            "inlier" = "#c0c0c0")) +
       geom_hline(aes(yintercept = 0)) +
       geom_segment(aes(x = pos,
                        y = .data[[feature_col]],
@@ -76,13 +81,13 @@ for (seq_id in names(result)) {
       geom_text(data = outlier,
                 mapping = aes(label = label),
                 hjust = 0, vjust = 0) +
-      scale_colour_manual(values = c(INLIER_COL, OUTLIER_COL)) +
-      guides(colour= guide_legend(title = "is outlier")) +
+      guides(colour = guide_legend(title = "outlier type")) +
       labs(x = "Position [nt]", y = feature) +
       theme_bw() +
       theme(legend.position = "bottom")
 
   tbl = "no data"
+  # FIXME remove
   if (nrow(outlier) > 0) {
     tbl <- outlier %>%
       dplyr::mutate(coords = paste0(seqnames, ":", pos)) %>%
@@ -96,4 +101,10 @@ for (seq_id in names(result)) {
   output <- paste0(opts$options$output, "/", seq_id, ".", opts$options$device)
   ggsave(output, p, width = 20, height = 10)
   saveRDS(p, paste0(opts$options$output, "/", seq_id, ".rds"))
+  saveRDS(p_barplot, paste0(opts$options$output, "/", seq_id, "_barplot.rds"))
+  write.table(outlier,
+              paste0(opts$options$output, "/", seq_id, "_outlier.tsv"),
+              quote = FALSE,
+              row.names = FALSE,
+              sep = "\t")
 }

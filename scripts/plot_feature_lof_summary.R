@@ -30,7 +30,7 @@ stopifnot(!is.null(opts$args))
 df <- read_merged_lof(opts$args)
 
 p <- df %>%
-  dplyr::filter(analysis == "analysis") %>%
+  dplyr::filter(analysis == "original") %>%
   dplyr::select(seqnames, pos, strand, dplyr::starts_with("feature_")) %>%
   tidyr::pivot_longer(dplyr::starts_with("feature_"), names_to = "feature", values_to = "score") %>%
   dplyr::mutate(feature = gsub("feature_", "", feature)) %>%

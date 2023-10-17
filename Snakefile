@@ -23,8 +23,8 @@ rule all:
   input: auto_targets()
 
 
-rule analysis:
-  input: analysis_targets()
+rule original:
+  input: original_targets()
 
 
 rule downsampling:

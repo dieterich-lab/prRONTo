@@ -11,9 +11,9 @@ def jacusa2_bams(condition):
                              condition2wildcard[condition] + "_rep{rep}.bam")
     # FIXME change to condI to enable multiple combinations
     if condition2wildcard[condition] == "cond1":
-      reps = get_replicates(1)
+      reps = REPLICATES1
     elif condition2wildcard[condition] == "cond2":
-      reps = get_replicates(2)
+      reps = REPLICATES2
     else:
       reps = 1
 

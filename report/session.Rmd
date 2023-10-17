@@ -1,3 +1,30 @@
 ## Session
 
-prRONTo version: 0.9
+### Software
+
+* [JACUSA2 v2.0.1](https://github.com/dieterich-lab/JACUSA2)
+* [JACUSA2helper v1.99](https://github.com/dieterich-lab/JACUSA2helper)
+* [prRONTo v0.9](https://github.com/dieterich-lab/prRONTo)
+
+### Config
+
+Reference FASTA
+: `r params$pronto$ref`
+
+Modifications
+: `r params$pronto$mods`
+
+Regions
+: `r params$pronto$regions`
+
+Targets:
+: `r paste(params$pronto$targets, sep = ", ")`
+
+Config file:
+: `r paste(params$meta$configfile, sep = ", ")`
+
+PEP file:
+: `r paste0(params$meta$workdir, "/", params$meta$pepfile)`
+
+Output
+: `r paste0(params$meta$workdir, "/", params$meta$output)`

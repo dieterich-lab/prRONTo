@@ -33,8 +33,7 @@ rule samtools_downsample_bam:
     read_count = sum(df["numreads"])
     fraction = round(int(wildcards.reads) / read_count, 3)
     if fraction > 1:
-      # TODO up sample
-      breakpoint()
+      raise Exception("target reads > actual reads")
     cmd = f"samtools view --subsample {fraction} --subsample-seed {wildcards.seed} " + "-o {output} {input.bam}"
     shell(cmd + " 2> {log}")
 
@@ -78,18 +77,18 @@ rule samtools_stats:
 
 def raw_fnames(suffix):
   fnames = []
-  for condition in SAMPLES["condition"].unique().tolist():
-    for replicate in range(1, get_replicates(condition) + 1):
-      fnames.append(join_path(f"data/bams/raw/cond{condition}_rep{replicate}{suffix}"))
+  for index, label in enumerate(CONDITIONS, start = 1):
+    for replicate in range(1, get_replicates(index) + 1):
+      fnames.append(join_path(f"data/bams/raw/cond{index}_rep{replicate}{suffix}"))
 
   return fnames
 
 
 def preprocessed_fnames(suffix):
   fnames = []
-  for condition in SAMPLES["condition"].unique().tolist():
-    for replicate in range(1, get_replicates(condition) + 1):
-      fnames.append(join_path(f"results/data/bams/preprocessed/cond{condition}_rep{replicate}{suffix}"))
+  for index, label in enumerate(CONDITIONS, start = 1):
+    for replicate in range(1, get_replicates(index) + 1):
+      fnames.append(join_path(f"results/data/bams/preprocessed/cond{index}_rep{replicate}{suffix}"))
 
   return fnames
 
@@ -155,8 +154,8 @@ rule merge_stats_sn:
 def all_bams():
   fnames = raw_fnames("_coverage.tsv") + preprocessed_fnames("_coverage.tsv")
 
-  for condition in SAMPLES["condition"].unique().tolist():
-    for replicate in range(1, get_replicates(condition) + 1):
+  for condition, replicates in zip([1, 2], [REPLICATES1, REPLICATES2]):
+    for replicate in range(1, replicates + 1):
       if "downsampling" in config:
         for seed in config["downsampling"]["seed"]:
           for reads in config["downsampling"]["reads"]:
@@ -168,11 +167,10 @@ def all_bams():
   return fnames
 
 
-# TODO rename to coverage
-rule samtools_read_summary:
+rule samtools_coverage_summary:
   input: all_bams()
-  output: join_path("results/read_summary.tsv"),
-  log: join_path("logs/samtools/read_summary.log"), # TODO - where to put in run
+  output: join_path("results/coverage_summary.tsv"),
+  log: join_path("logs/samtools/coveraga/summary.log"),
   run:
     dfs = []
     for fname in input:

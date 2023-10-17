@@ -7,23 +7,32 @@ option_list <- list(
                         type = "character",
                         default = "pdf",
                         help = "Plot type"),
+  optparse::make_option(c("-1", "--cond1"),
+                        type = "character",
+                        default = "condition 1",
+                        help = "label for condition"),
+  optparse::make_option(c("-2", "--cond2"),
+                        type = "character",
+                        default = "condition 2",
+                        help = "label for condition"),
   optparse::make_option(c("-o", "--output"),
                         type = "character",
                         help = "Output")
 )
-args = c("--output=tmp", # TODO
-         "debug/results/read_summary.tsv")
+args = c("--output=tmp",
+         "output/results/coverage_summary.tsv")
 opts = debug_opts(option_list, args)
 
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$args))
 
 df <- read.table(opts$args, header = TRUE, sep = "\t", comment.char = "", check.names = FALSE) %>%
-  dplyr::mutate(condition = dplyr::case_match(condition, 1 ~ "cond1", 2 ~ "cond2"))
+  dplyr::mutate(condition = dplyr::case_match(condition, 1 ~ opts$options$cond1, 2 ~ opts$options$cond2))
 colnames(df) <- gsub("#", "", colnames(df))
+
 df <- df %>%
   dplyr::mutate(analysis = dplyr::case_when(
-    parameters %in% c("raw", "preprocessed") ~ "data",
+    parameters %in% c("raw", "preprocessed") ~ "original",
     grepl("^seed~.+_reads~[0-9]+$", parameters) ~ "downsampling",
     .default = "unknown"))
 
@@ -37,46 +46,47 @@ df$parameters <- forcats::fct_relevel(df$parameters, "raw", "preprocessed")
 
 plot_data <- function(df) {
   p <- df %>%
-    ggplot(aes(x = interaction(replicate, condition),
+    ggplot(aes(x = as.factor(replicate),
                y = numreads,
                fill = parameters)) +
       geom_col(position = position_dodge(width = NULL)) +
       geom_text(aes(label = numreads), position = position_dodge(width = 0.9), angle = 15) +
-      labs(x = "conditions and replicates", y = "reads", fill = "reads", colour = "") +
-      scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
+      labs(x = "replicates", y = "reads", fill = "reads", colour = "") +
+      scale_fill_manual(values = c(raw = "#a6cee3", preprocessed = "#b2df8a")) +
       theme_bw() +
-      theme(legend.position = "bottom")
+      theme(legend.position = "bottom") +
+      facet_wrap(. ~ condition)
 
   p
 }
 
 plot_seq_ids <- function(df) {
   p <- df %>%
-    ggplot(aes(x = interaction(replicate, condition),
+    ggplot(aes(x = as.factor(replicate),
                y = numreads,
                fill = parameters)) +
       geom_col(position = position_dodge(width = NULL)) +
       geom_text(aes(label = numreads), position = position_dodge(width = 0.9), angle = 15) +
-      labs(x = "conditions and replicates", y = "reads", fill = "reads", colour = "") +
-      scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
+      labs(x = "replicates", y = "reads", fill = "reads", colour = "") +
+      scale_fill_manual(values = c(raw = "#a6cee3", preprocessed = "#b2df8a")) +
       theme_bw() +
       theme(legend.position = "bottom") +
-      facet_wrap(rname ~ .)
+      facet_grid(rname ~ condition)
 
   p
 }
 
 plot_downsampling <- function(df) {
   p <- df %>%
-    ggplot(aes(x = interaction(replicate, condition),
+    ggplot(aes(x = as.factor(replicate),
                y = numreads)) +
       geom_violin() +
       geom_jitter(aes(colour = seed), width = 0.1) +
       geom_hline(aes(yintercept = reads, linetype = "dashed")) +
-      facet_wrap(~ reads, ncol = 1, labeller = label_both) +
+      facet_grid(reads ~ condition, labeller = label_both) +
       labs(x = "conditions and replicates", y = "reads", colour = "seed") +
       guides(linetype = "none") +
-      scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = ".", extend = -1)) +
+      scale_x_discrete(guide = ggh4x::guide_axis_nested(delim = "|", extend = -1)) +
       theme_bw() +
       theme(legend.position = "bottom")
 
@@ -87,7 +97,7 @@ plot <- function(df, output, plot_seq_ids = FALSE) {
   fname_prefix <- gsub(paste0(".", opts$options$device), "", output)
 
   p_data <- df %>%
-    dplyr::filter(analysis == "data") %>%
+    dplyr::filter(analysis == "original") %>%
     dplyr::group_by(parameters, condition, replicate) %>%
     dplyr::summarise(numreads = sum(numreads)) %>%
     dplyr::ungroup() %>%
@@ -98,7 +108,7 @@ plot <- function(df, output, plot_seq_ids = FALSE) {
 
   if (plot_seq_ids) {
     p_seq_ids <- df %>%
-      dplyr::filter(analysis == "data") %>%
+      dplyr::filter(analysis == "original") %>%
       dplyr::group_by(rname, parameters, condition, replicate) %>%
       dplyr::summarise(numreads = sum(numreads)) %>%
       dplyr::ungroup() %>%
