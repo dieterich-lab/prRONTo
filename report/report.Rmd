@@ -20,8 +20,8 @@ htmltools::img(src = "{{ basedir }}/report/lab_logo.png",
 <br/>
 <br/>
 
-{% if pep["project"] %}
-### Project: TODO
+{% if "project" in pep.config %}
+### Project: {{ pep.config["project"] }}
 {% endif %}
 #### Conditions: {{ PRONTO["condition1"] }} vs. {{ PRONTO["condition2"] }}
 #### Report created: `r format(Sys.time(), format = "%Y-%m-%d %H:%M")`
