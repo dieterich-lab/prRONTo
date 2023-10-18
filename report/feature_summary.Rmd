@@ -57,20 +57,20 @@ I
 {% endif%}
 <h4>Original</h4>
 {% if config["downsampling"] %}
-```{r, fig.align="center", fig-read-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-summary}
+```{r, fig-read-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-summary, fig.align="center"}
 readRDS("../plots/downsampling_summary/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}.rds") %>%
   print()
 ```
 {% endif %}
 
-```{r, fig.align="center", fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-barplot}
+```{r, fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-barplot, fig.align="center"}
 readRDS("../plots/feature/original/preprocessed/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_barplot.rds") %>%
   print()
 ```
 
 <!-- TODO: add is target -->
 
-```{r, fig.align="center", fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-table, results="asis"}
+```{r, fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-table, results="asis", fig.align="center"}
 read.table("../plots/feature/original/preprocessed/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_outlier.tsv", header = TRUE, sep = "\t") %>%
   dplyr::select(seqnames, pos, ref, ref_context, mod, outlier_type) %>%
   dplyr::rename("seq. id" = "seqnames", "ref." = "ref", "ref. context" = "ref_context", "outlier type" = "outlier_type") %>%
@@ -84,11 +84,11 @@ read.table("../plots/feature/original/preprocessed/neighbors~{{lof["neighbors"]}
 <h5>Reads~{{reads}}</h5>
 {% for seed in config["downsampling"]["seed"] %}
 <h6>Seed~{{seed}}</h6>
-```{r, fig.align="center", fig-feature-analysis-{{reads}}-{{seed}}-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-barplot}
+```{r, fig-feature-analysis-{{reads}}-{{seed}}-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-barplot, fig.align="center"}
 readRDS("../plots/feature/downsampling/seed~{{seed}}_reads~{{reads}}/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_barplot.rds") %>%
   print()
 ```
-```{r, fig.align="center", fig-feature-downsampling-{{reads}}-{{seed}}-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-table, results="asis"}
+```{r, fig-feature-downsampling-{{reads}}-{{seed}}-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-table, results="asis", fig.align="center"}
 read.table("../plots/feature/downsampling/seed~{{seed}}_reads~{{reads}}/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_outlier.tsv", header = TRUE, sep = "\t") %>%
   dplyr::select(seqnames, pos, ref, ref_context, mod, outlier_type) %>%
   dplyr::rename("seq. id" = "seqnames", "ref." = "ref", "ref. context" = "ref_context", "outlier type" = "outlier_type") %>%

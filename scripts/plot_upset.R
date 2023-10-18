@@ -68,7 +68,7 @@ if (length(features) == 1) {
     p <- upset(filtered, parameters,
                name = "runs",
                base_annotations = list(
-                 "Intersection size" = intersection_size(mapping = aes(fill = outlier_type)) +
+                 "Intersection size" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
                    labs(fill = "outlier type") +
                    scale_fill_manual(values = c("known modification" = "#66c2a5",
                                                 "unknown" = "#fc8d62",
