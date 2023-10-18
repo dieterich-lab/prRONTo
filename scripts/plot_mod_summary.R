@@ -1,5 +1,6 @@
 library(magrittr)
 library(ggplot2)
+source(paste0(Sys.getenv("PRONTO_DIR"), "/scripts/pronto_lib.R"))
 
 option_list <- list(
   optparse::make_option(c("-o", "--output"),
@@ -7,12 +8,9 @@ option_list <- list(
                         help = "Output")
 )
 
-opts <- optparse::parse_args(
-  optparse::OptionParser(option_list = option_list),
-  positional_arguments = TRUE#,
-  #args = c("--output=mods.pdf",
-  #         "output/data/mods.tsv")
-)
+args <- c("--output=mods.pdf",
+         "output/data/mods.tsv")
+opts <- debug_opts(option_list, args)
 
 stopifnot(!is.null(opts$options$output))
 stopifnot(!is.null(opts$args))
@@ -29,8 +27,4 @@ p <- df %>% dplyr::group_by(mod) %>%
   theme_bw() +
   theme(legend.position = "bottom")
 
-# TODO
-# covered in bams
-
-ggsave(opts$options$output, p)
-saveRDS(p, paste0(gsub(".pdf$", "", opts$options$output), ".rds"))
+save_plot(p, opts$options$output, ".pdf")

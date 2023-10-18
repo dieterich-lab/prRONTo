@@ -50,7 +50,7 @@ add_targets <- function(result, targets) {
       plyranges::join_overlap(targets)})
 }
 
-# TODO test
+# TODO test - FIX outlier and is_in_neighborhood
 add_neighborhood <- function(result, mods, neighborhood) {
   mods <- mods %>%
     IRanges::resize(width = 2 * neighborhood + 1, fix = "center")

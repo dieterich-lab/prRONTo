@@ -12,7 +12,7 @@ ruleorder: plot_stats_sn_summary > plot_stats_section_summary
 SAMPLES = pep.sample_table
 PRONTO = pep.config.pronto
 CONDITIONS = [PRONTO["condition1"], PRONTO["condition2"]]
-# TODO config["pepfile"], samples table
+
 
 def get_replicates(index):
   return len(SAMPLES.loc[SAMPLES["condition"] == CONDITIONS[index - 1], "filename"].tolist())
@@ -31,7 +31,6 @@ MODS = join_path("data/mods.tsv")
 REGIONS = join_path("results/data/regions.txt")
 
 
-# TODO change label
 STATS_SECTION2COLUMNS = {
   "RL": ["read_length", "count", ],
   "MAPQ": ["mapq", "count", ],
@@ -63,7 +62,6 @@ for region in ["total"] + PRONTO["regions"]:
     FNAMES_READ_SUMMARY_PLOTS.append(f"{DIR_READ_SUMMARY_PLOTS}/{region}_{subplot}.rds")
 
 
-# TODO move to common
 def read_summary_rdfs(wildcards):
   fnames = FNAMES_READ_SUMMARY_PLOTS
   fnames += [join_path(f"plots/samtools/stats/merged_SN_{col.replace(' ', '_')}_summary.rds")
@@ -150,7 +148,7 @@ def create_include_bam_rules(condition: int):
       input: fname
       output: join_path(f"data/bams/raw/cond{condition}_rep{i}.bam")
       params:
-        include="copy" # FIXME include=config.get("include", {}).get("bams")
+        include="copy"
       run:
         if params.include == "copy":
           cmd = "cp"

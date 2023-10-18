@@ -1,4 +1,4 @@
-import jinja2 # TODO use snakemake 7 engine
+import jinja2
 
 
 rule report_render:

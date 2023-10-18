@@ -7,7 +7,7 @@ rule samtools_preprocess_bam:
   params:
     filter=config["preprocess"]["filter"],
     calmd=config["preprocess"]["calmd"],
-  log: join_path("logs/samtools/preprocess_bam/{filename}.log") # TODO - where to put is in run
+  log: join_path("logs/samtools/preprocess_bam/{filename}.log")
   run:
     with open(input.regions, "r") as f:
       regions = [line.strip() for line in f.readlines()]
@@ -27,7 +27,7 @@ rule samtools_downsample_bam:
   input: bam=join_path("results/data/bams/preprocessed/{filename}.bam"),
          coverage=join_path("results/data/bams/preprocessed/{filename}_coverage.tsv"),
   output: join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{filename}.bam")
-  log: join_path("logs/samtools/downsample_bam/seed~{seed}_reads~{reads}/{filename}.log") # TODO - where to put is in run
+  log: join_path("logs/samtools/downsample_bam/seed~{seed}_reads~{reads}/{filename}.log")
   run:
     df = pd.read_csv(input.coverage, sep = "\t")
     read_count = sum(df["numreads"])
@@ -36,24 +36,6 @@ rule samtools_downsample_bam:
       raise Exception("target reads > actual reads")
     cmd = f"samtools view --subsample {fraction} --subsample-seed {wildcards.seed} " + "-o {output} {input.bam}"
     shell(cmd + " 2> {log}")
-
-
-# TODO for mixing
-#rule samtools_mix_bams:
-#  input: condA=join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bamA}"),
-#         condB=join_path("results/downsampling/bams/seed~{seed}_reads~{reads}/{bamB}"),
-#  output: join_path("results/mixing/bams/seed~{seed}_reads~{reads}/cond1~{fractionA}_and_cond2~{fractionB}.bam"),
-#  log: join_path("logs/samtools/mix_bams/seed~{seed}_reads~{reads}/cond1~{fractionA}_and_cond2~{fractionB}.log"),
-#  params:
-#    condA=lambda wildcards: f"--subsample-seed {wildcards.seed} --subsample {wildcards.fractionA}",
-#    condB=lambda wildcards: f"--subsample-seed {wildcards.seed} --subsample {wildcards.fractionB}",
-#  shell: """
-#    samtools merge -c -p \
-#        {output} \
-#        <(samtools view {params.condA} {input.condA}) \
-#        <(samtools view {params.condB} {input.condB}) \
-#        2> {log}
-#    """
 
 
 rule samtools_index_bam:

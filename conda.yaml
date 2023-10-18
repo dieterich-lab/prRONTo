@@ -20,5 +20,5 @@ dependencies:
   - r-ggpubr
   - r-complexupset
   - bioconductor-plyranges
-  # - r-jacusa2helper
+  - r-jacusa2helper
   #- r-ggh4x

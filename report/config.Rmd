@@ -10,7 +10,6 @@ readRDS("../plots/mod_summary.rds") %>%
 ```
 
 <!-- TODO covered modifications -->
-
 <!-- TODO total and per region -->
 
 

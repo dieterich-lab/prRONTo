@@ -1,9 +1,5 @@
-# TODO
-# * outlier
 # * vicintiy
 # * targets, missed modifications
-# * FIXME no outliers
-# * knownmodifcation
 
 library(ggplot2)
 library(magrittr)
@@ -29,7 +25,7 @@ option_list <- list(
                         type = "character",
                         help = "Output")
 )
-args = c("--feature=M",
+args <- c("--feature=M",
          "--output=tmp",
          "output/results/analysis/jacusa2/preprocessed/lof/neighbors~20_contamination~0.002/cond1_vs_cond2.tsv")
 opts <- debug_opts(option_list, args)
@@ -44,7 +40,7 @@ lof_outlier_col <- paste0("lof_outlier_", feature)
 
 result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
   dplyr::mutate(is_outlier = dplyr::case_when(.data[[lof_outlier_col]] == 1 ~ TRUE, .default = FALSE),
-                label = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ paste(pos,"(", mod, ")"),
+                label = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ paste(pos, "(", mod, ")"),
                                          is_modified == 0 & is_outlier == 1 ~ as.character(pos)),
                 outlier_type = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ "known modification",
                                                 is_modified == 0 & is_outlier == 1 ~ "unknown",
@@ -86,7 +82,7 @@ for (seq_id in names(result)) {
       theme_bw() +
       theme(legend.position = "bottom")
 
-  tbl = "no data"
+  tbl <- "no data"
   # FIXME remove
   if (nrow(outlier) > 0) {
     tbl <- outlier %>%

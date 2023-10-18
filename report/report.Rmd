@@ -20,6 +20,7 @@ htmltools::img(src = "{{ basedir }}/report/lab_logo.png",
 <br/>
 <br/>
 
+<<<<<<< HEAD
 {% if "project" in pep.config %}
 ### Project: {{ pep.config["project"] }}
 {% endif %}

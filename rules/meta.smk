@@ -41,7 +41,6 @@ rule meta_add_lof:
   log: join_path("logs/{ANALYSIS}/add_lof/{bam_prefix}/neighbors~{neighbors}_contamination~{contamination}/{comparison}.log"),
   params:
     features=parse_features()
-  # TODO filter-media in config
   shell: """
     python {workflow.basedir}/scripts/add_lof.py \
         {params.features} \
