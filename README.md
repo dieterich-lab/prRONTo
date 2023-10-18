@@ -1,7 +1,11 @@
 prRONTo - precise rRNA modification analysis on ONTechnoligies
 ==============================================================
 
-TODO add text - from paper
+[prRONTo](https://github.com/dieterich-lab/prRONTo) is a snakemake workflow 
+for comprehensive identification of diverse ribosomal RNA modifications
+ by targeted nanopore direct RNA sequencing and JACUSA2.
+
+See original publication for details [DOI: 10.1080/15476286.2023.2248752](https://www.tandfonline.com/doi/full/10.1080/15476286.2023.2248752)
 
 # Installation
 
@@ -22,7 +26,7 @@ Internally, [prRONTo](https://github.com/dieterich-lab/prRONTo) uses
 detect RNA modifications and a collection of 
 [R](https://www.r-project.org) and [Python](https://www.python.org) scripts for processing.
 
-Required dependencies can be installed via conda:
+Required dependencies can be installed via [Conda](https://conda.io):
 ```
 conda env create -n pronto -f conda.yaml
 conda activate pronto
@@ -30,25 +34,24 @@ conda activate pronto
 
 # Usage
 
-TODO config pep + sample table mods, refs
+A a sample description via a [PEP](https://pep.databio.org/en/2.0.0) file and a sample table is required.
+Furthermore, the reference FASTA and a customized RNA modification file corresponding to the sequencing data is required.
 
 ```
 snakemake -c 1 -f <SNAKEFILE> --config pep=<PEPFILE> [--configfile=<CONFIG_FILE>]
 ```
+The `<CONFIG_FILE>` defines and adjusts parameters of the analysis whereas `<PEPFILE>` is enitrely sample specific.
 
-## Sample description
+## PEP file
 
-[prRONTo](https://github.com/dieterich-lab/prRONTo) requires a sample description 
-via a [PEP](https://pep.databio.org/en/2.0.0/workflows/) file and a sample table.
-
-### PEP file
-
-The [PEP](https://pep.databio.org/en/2.0.0/) is in yaml format.
+The [PEP](https://pep.databio.org/en/2.0.0/) is in [yaml](https://yaml.org/) format.
 In the following, a descriptive example is presented:
 
 ```yaml
 pep_version: 2.0.0
 sample_table: <SAMPLE_TABLE>      # REQUIRED, path to sample table
+
+project: "Example"                # OPTIONAL, plain text, no special characters
 
 pronto:
   regions: ["region1", "region2"] # REQUIRED, list of seqnames to scan for modifications
@@ -65,7 +68,7 @@ pronto:
 
 See `example/human/pep.yaml` for an example.
 
-#### sample table
+## sample table
 
 A minimal sample table is provided in the following:
 
@@ -77,6 +80,28 @@ A minimal sample table is provided in the following:
 | sample_2_2  | condition2 | <BAM_2_2> |
 
 See `example/human/sample_table.yaml` for an example.
+
+## analysis config
+
+In the following, a descriptive example is presented:
+
+```yaml
+
+downsampling:   # OPTIONAL
+  # target coverage
+  reads: [1000, ]
+  # seeds for read sampling with samtools
+  # the number of seeds corresponds to the number of repetitions
+  seed: ["CfdCY", "gJm9e", "CZ8X7", "1Cdq4", "6pod1", "RtDnQ", "AdOWe", ]
+jacusa2:
+  features: ["M", "MDI"]    # Features to use for the LOF analysis
+# LOF specific parameters
+lof:
+  - neighbors: 20
+    contamination: 0.001
+  - neighbors: 20
+    contamination: 0.002
+```
 
 # Modification file format
 
@@ -105,7 +130,7 @@ The report is organised in to 4 sections:
 
 The results section contains the putative RNA modifications as outliers stratified 
 by region and utilized feature.
-Additionaly, known modification, optional downsampling info and LOF parameters are presented.
+Additionaly, known modifications, optional downsampling info and LOF parameters are presented.
 
 ## Reads
 
@@ -134,12 +159,5 @@ In the following, a chain of commands to run a toy example:
 2. `cd prRONTo`
 3. Install conda env.: `conda env create -n pronto -f conda.yaml`
 4. Activate conda env.: `conda activate pronto`
-5. Run prRONTo: `snakemake -c 1 --config pep=examples/data.yaml -configfile=examples/analysis.yaml`
-6. Open `example/output/report/report.html`with your favorite browser and check the results.
-
-# TODO
-* abstract
-* runnable example
-* explain pep
-* explain sample table
-* config options
+5. Run prRONTo: `cd example/human ; run_exampe.sh``
+6. Open `output/report/report.html`with your favorite browser and check the results.
