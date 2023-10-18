@@ -1,0 +1,12 @@
+pep_version: 2.0.0
+sample_table: sample_table.tsv
+
+project: "HCT116 WT vs. WBSCR22 MUT"
+
+pronto:
+  output_dir: output
+  ref: ../../data/human/human_rrna.fasta
+  mods: ../../data/human/human_rrna_mods.tsv
+  regions: ["NR_003286_RNA18SN5", ]
+  condition1: wt
+  condition2: mut

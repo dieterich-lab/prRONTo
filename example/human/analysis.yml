@@ -1,0 +1,10 @@
+downsampling:
+  reads: [1000, ]
+  seed: ["CfdCY", "gJm9e", "CZ8X7", "1Cdq4", "6pod1", "RtDnQ", "AdOWe", ]
+jacusa2:
+  features: ["M", "MDI"]
+lof:
+  - neighbors: 20
+    contamination: 0.001
+  - neighbors: 20
+    contamination: 0.002

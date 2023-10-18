@@ -27,4 +27,4 @@ p <- df %>% dplyr::group_by(mod) %>%
   theme_bw() +
   theme(legend.position = "bottom")
 
-save_plot(p, opts$options$output, ".pdf")
+save_plot(p, opts$options$output, "pdf")

@@ -115,7 +115,7 @@ rule include_fasta:
   input: PRONTO.ref
   output: REF_FASTA
   params:
-    include=config.get("include", {}).get("ref")
+    include="copy" # FIXME include=config.get("include", {}).get("ref")
   run:
       if params.include == "copy":
        cmd = "cp"
@@ -129,7 +129,7 @@ rule include_mods:
   input: PRONTO.mods
   output: MODS
   params:
-    include=config.get("include", {}).get("mods")
+    include="copy" # FIXME
   run:
       if params.include == "copy":
         cmd = "cp"
@@ -148,7 +148,7 @@ def create_include_bam_rules(condition: int):
       input: fname
       output: join_path(f"data/bams/raw/cond{condition}_rep{i}.bam")
       params:
-        include="copy"
+        include="copy" # FIXME
       run:
         if params.include == "copy":
           cmd = "cp"

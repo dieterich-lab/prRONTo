@@ -1,11 +1,11 @@
 rule plot_mod_summary:
   input: join_path("data/mods.tsv"),
-  output: plot=join_path("plots/mod_summary.pdf"),
+  output: pdf=join_path("plots/mod_summary.pdf"),
           rds=join_path("plots/mod_summary.rds"),
   log: join_path("logs/plot/mod_summary.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/plot_mod_summary.R \
-      --output {output.plot} \
+      --output {output.pdf} \
       {input} \
       2> {log}
   """
