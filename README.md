@@ -40,7 +40,7 @@ Furthermore, the reference FASTA and a customized RNA modification file correspo
 ```
 snakemake -c 1 -f <SNAKEFILE> --config pep=<PEPFILE> [--configfile=<CONFIG_FILE>]
 ```
-The `<CONFIG_FILE>` defines and adjusts parameters of the analysis whereas `<PEPFILE>` is enitrely sample specific.
+The `<CONFIG_FILE>` defines and adjusts parameters of the analysis whereas the `<PEPFILE>` is entirely sample specific.
 
 ## PEP file
 
@@ -60,7 +60,7 @@ pronto:
   ref: <REF_FASTA>                # REQUIRED, path to reference FASTA
 
   # values for condition 1 and 2 
-  # must must exist in
+  # must exist in
   # the column "condition" in the sample table!
   condition1: "condition1"        # REQUIRED, value from col. "condition" in sample table
   condition2: "condition2"        # REQUIRED, value from col. "condition", in sample table
@@ -68,7 +68,7 @@ pronto:
 
 See `example/human/pep.yaml` for an example.
 
-## sample table
+## Sample table
 
 A minimal sample table is provided in the following:
 
@@ -81,12 +81,11 @@ A minimal sample table is provided in the following:
 
 See `example/human/sample_table.yaml` for an example.
 
-## analysis config
+## Analysis config
 
 In the following, a descriptive example is presented:
 
 ```yaml
-
 downsampling:   # OPTIONAL
   # target coverage
   reads: [1000, ]
