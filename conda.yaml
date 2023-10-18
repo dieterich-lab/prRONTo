@@ -22,4 +22,4 @@ dependencies:
   - bioconductor-plyranges
   - bioconductor-bsgenome
   - r-jacusa2helper
-  #- r-ggh4x
+  - r-ggh4x
