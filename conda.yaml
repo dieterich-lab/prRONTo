@@ -18,6 +18,7 @@ dependencies:
   - r-knitr
   - r-kableExtra
   - r-ggpubr
+  - r-ggupset
   - r-complexupset
   - bioconductor-plyranges
   - bioconductor-bsgenome
