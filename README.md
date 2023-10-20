@@ -38,7 +38,7 @@ A a sample description via a [PEP](https://pep.databio.org/en/2.0.0) file and a 
 Furthermore, the reference FASTA and a customized RNA modification file corresponding to the sequencing data is required.
 
 ```
-snakemake -c 1 -f <SNAKEFILE> --config pep=<PEPFILE> [--configfile=<CONFIG_FILE>]
+snakemake -c 1 --snakefile <SNAKEFILE> --config pep=<PEPFILE> [--configfile=<CONFIG_FILE>]
 ```
 The `<CONFIG_FILE>` defines and adjusts parameters of the analysis whereas the `<PEPFILE>` is entirely sample specific.
 
