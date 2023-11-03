@@ -1,2 +1,4 @@
 test/*
 todo.md
+example/human/output
+.snakemake
