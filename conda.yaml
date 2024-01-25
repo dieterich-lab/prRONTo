@@ -24,3 +24,5 @@ dependencies:
   - bioconductor-bsgenome
   - r-jacusa2helper
   - r-ggh4x
+  - r-ggfittext
+

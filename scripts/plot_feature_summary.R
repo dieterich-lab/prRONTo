@@ -37,15 +37,15 @@ lof_opts <- strsplit(opts$options$lof_params, ",") %>%
 features <- guess_features(df)
 outlier_col <- paste0("lof_outlier_", features)
 cols <- c(outlier_col, "is_modified", "is_target", "is_in_neighborhood", "mod")
-parameters <- rev(unique(df$parameters))
+short_parameters <- rev(unique(df$short_parameters))
 filtered <- df %>%
   dplyr::filter(lof_params %in% lof_opts) %>%
-  dplyr::select(seqnames, pos, strand, parameters, dplyr::all_of(cols)) %>%
+  dplyr::select(seqnames, pos, strand, short_parameters, dplyr::all_of(cols)) %>%
   tidyr::pivot_longer(cols = dplyr::all_of(outlier_col), names_to = "feature", values_to = "is_outlier") %>%
-  dplyr::mutate(feature = gsub("outlier_col_", "", feature)) %>%
+  dplyr::mutate(feature = gsub("lof_outlier_", "", feature)) %>%
   dplyr::filter(is_outlier == 1) %>%
-  tidyr::pivot_wider(id_cols = c(seqnames, pos, strand, is_modified, mod, is_target, is_in_neighborhood),
-                     names_from = parameters,
+  tidyr::pivot_wider(id_cols = c(seqnames, pos, strand, feature, is_modified, mod, is_target, is_in_neighborhood),
+                     names_from = short_parameters,
                      values_from = is_outlier,
                      values_fn = function(x) { as.logical(sum(x)) },
                      values_fill = FALSE)
@@ -55,24 +55,33 @@ filtered$outlier_type <- ifelse(filtered$is_modified, "known modification",
 filtered$label <- ifelse(filtered$is_modified,
                          paste0(filtered$pos, "\n(", filtered$mod, ")"),
                          ifelse(filtered$is_in_neighborhood != "",
-                                paste0(filtered$pos, "\n{", gsub(",", "\n", filtered$is_in_neighborhood), "}"),
+                                paste0(filtered$pos, "\n{", filtered$is_in_neighborhood, "}"),
                                 filtered$pos))
 
-p <- upset(filtered, parameters,
+#geom_text(
+#   mapping = aes(label = label),
+#   position = position_stack(vjust = 0.5),
+#   na.rm = TRUE) +
+
+p <- upset(filtered, short_parameters,
            name = "runs",
            base_annotations = list(
              "Intersection size" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
-             geom_text(
-               mapping = aes(label = label),
-               position = position_stack(vjust = 0.5),
-               na.rm = TRUE) +
+             ggfittext::geom_bar_text(
+                 mapping = aes(label = label),
+                 min.size = 0,
+                 position = "stack",
+                 contrast = FALSE,
+                 vjust = 1.1) +
              labs(fill = "outlier type") +
              scale_fill_manual(values = c("known modification" = "#66c2a5",
                                           "unknown" = "#fc8d62",
                                           "modification in vicinity" = "#8da0cb")) +
-             scale_y_continuous(breaks = integer_breaks())
+             scale_y_continuous(breaks = integer_breaks()) +
+             facet_grid(feature ~ .) +
+             theme(strip.text.y = element_text(angle = 0),
+                   legend.position = "bottom")
            ),
            width = 0.1,
-           set_sizes = FALSE) +
-      theme(legend.position = "bottom")
+           set_sizes = FALSE)
 save_plot(p, opts$options$output, "pdf")
