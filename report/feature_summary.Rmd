@@ -1,48 +1,40 @@
 ## Results {.tabset}
+
 ### Summary
 
-#### Overlap of outliers
+<h3>Overlap of outliers</h3>
 
-n
-: neighbors (lof)
-
-c
-: contamination (lof)
-
-s
-: seed (downsampling)
-
-r
-: reads (downsampling)
+|               |                         |                         |                          |
+| ------------- | ----------------------- | ----------------------- | ------------------------ |
+| n = neighbors | c = contamination (lof) | s = seed (downsampling) | r = reads (downsampling) |
 
 
-```{r, fig-feature-feature-overlap}
-readRDS("../plots/original/feature_summary.rds") %>%
+{% for lof in config["lof"] %}
+<h5> LOF: neighbors~{{lof["neighbors"]}}, contamination~{{lof["contamination"]}} </h5>
+```{r, fig-feature-overlap-{{lof["neighbors"]}}-{{lof["contamination"]}})}
+readRDS("../plots/original/feature_summary/neighbors~{{lof['neighbors']}}_contamination~{{lof['contamination']}}.rds") %>%
   print()
 ```
+{% endfor %}
 
-#### Density for features (original)
+<h3>Density for features (preprocessed)</h3>
 
 ```{r, fig-feature-lof-summary}
 readRDS("../plots/feature_lof_summary.rds") %>%
   print()
 ```
 
-M
-: Mismatch score
 
-D
-: Deletion score
-
-I
-: Insertion score
+|                    |                    |                     |
+| ------------------ | ------------------ | ------------------- |
+| M = Mismatch score | D = Deletion score | I = Insertion score |
 
 {% for region in PRONTO["regions"] %}
 {% if loop.first %}
 ### Region: {{region}} {.tabset}
 {% else %}
 ### {{region}} {.tabset}
-{% endif%}
+{% endif %}
 {% for feature in config["jacusa2"]["features"] %}
 {% if loop.first %}
 #### Feature: {{feature}} {.tabset}
@@ -51,11 +43,10 @@ I
 {% endif%}
 {% for lof in config["lof"] %}
 {% if loop.first %}
-##### *neighbors~{{lof["neighbors"]}}, contamination~{{lof["contamination"]}}*
+##### *LOF: neighbors~{{lof["neighbors"]}}, contamination~{{lof["contamination"]}}*
 {% else %}
 ##### *.~{{lof["neighbors"]}}, .~{{lof["contamination"]}}*
-{% endif%}
-<h4>Original</h4>
+{% endif %}
 {% if config["downsampling"] %}
 ```{r, fig-read-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-summary, fig.align="center"}
 readRDS("../plots/downsampling_summary/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}.rds") %>%
@@ -63,6 +54,7 @@ readRDS("../plots/downsampling_summary/neighbors~{{lof["neighbors"]}}_contaminat
 ```
 {% endif %}
 
+<h3>Preprocessed</h3>
 ```{r, fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-barplot, fig.align="center"}
 readRDS("../plots/feature/original/preprocessed/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_barplot.rds") %>%
   print()
@@ -72,26 +64,25 @@ readRDS("../plots/feature/original/preprocessed/neighbors~{{lof["neighbors"]}}_c
 
 ```{r, fig-feature-analysis-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-table, results="asis", fig.align="center"}
 read.table("../plots/feature/original/preprocessed/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_outlier.tsv", header = TRUE, sep = "\t") %>%
-  dplyr::select(seqnames, pos, ref, ref_context, mod, outlier_type) %>%
-  dplyr::rename("seq. id" = "seqnames", "ref." = "ref", "ref. context" = "ref_context", "outlier type" = "outlier_type") %>%
+  dplyr::select(seqnames, pos, ref, ref_context, mod, outlier_type, is_in_neighborhood) %>%
+  dplyr::rename("seq. id" = "seqnames", "ref." = "ref", "ref. context" = "ref_context", "outlier type" = "outlier_type", "mods in vicinity" = "is_in_neighborhood") %>%
   dplyr::mutate(mod = dplyr::recode(mod, "*" = "")) %>%
   knitr::kable() %>%
   kableExtra::kable_styling(full_width = FALSE)
 ```
 {% if config["downsampling"] %}
-<h4>Downsampling</h4>
 {% for reads in config["downsampling"]["reads"] %}
-<h5>Reads~{{reads}}</h5>
 {% for seed in config["downsampling"]["seed"] %}
-<h6>Seed~{{seed}}</h6>
+<h3>Sampling: Reads~{{reads}} Seed~{{seed}}</h3>
+
 ```{r, fig-feature-analysis-{{reads}}-{{seed}}-preprocessed-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-barplot, fig.align="center"}
 readRDS("../plots/feature/downsampling/seed~{{seed}}_reads~{{reads}}/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_barplot.rds") %>%
   print()
 ```
 ```{r, fig-feature-downsampling-{{reads}}-{{seed}}-{{lof["neighbors"]}}-{{lof["contamination"]}}-{{feature}}-{{region}}-table, results="asis", fig.align="center"}
 read.table("../plots/feature/downsampling/seed~{{seed}}_reads~{{reads}}/neighbors~{{lof["neighbors"]}}_contamination~{{lof["contamination"]}}/feature~{{feature}}/{{region}}_outlier.tsv", header = TRUE, sep = "\t") %>%
-  dplyr::select(seqnames, pos, ref, ref_context, mod, outlier_type) %>%
-  dplyr::rename("seq. id" = "seqnames", "ref." = "ref", "ref. context" = "ref_context", "outlier type" = "outlier_type") %>%
+  dplyr::select(seqnames, pos, ref, ref_context, mod, outlier_type, is_in_neighborhood) %>%
+  dplyr::rename("seq. id" = "seqnames", "ref." = "ref", "ref. context" = "ref_context", "outlier type" = "outlier_type", "mods in vicinity" = is_in_neighborhood) %>%
   dplyr::mutate(mod = dplyr::recode(mod, "*" = "")) %>%
   knitr::kable() %>%
   kableExtra::kable_styling(full_width = FALSE)

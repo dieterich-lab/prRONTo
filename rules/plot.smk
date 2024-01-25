@@ -1,11 +1,20 @@
+def _plot_mods_opts(wildcards):
+  if wildcards.region == "summary":
+    return ""
+
+  return f"-s {wildcards.region}"
+
 rule plot_mod_summary:
   input: join_path("data/mods.tsv"),
-  output: pdf=join_path("plots/mod_summary.pdf"),
-          rds=join_path("plots/mod_summary.rds"),
-  log: join_path("logs/plot/mod_summary.log"),
+  output: pdf=join_path("plots/mods/{region}.pdf"),
+          rds=join_path("plots/mods/{region}.rds"),
+  log: join_path("logs/plot/mods/{region}.log"),
+  params:
+    opts=_plot_mods_opts,
   shell: """
     Rscript {workflow.basedir}/scripts/plot_mod_summary.R \
       --output {output.pdf} \
+      {params.opts} \
       {input} \
       2> {log}
   """
@@ -58,7 +67,7 @@ rule plot_feature:
           tsv=files_plot_feature("_outlier.tsv"),
   log: join_path("logs/plot/{ANALYSIS}/{bam_prefix}/neighbors~{neighbors}_contamination~{contamination}/feature~{feature}.log"),
   params:
-    targets="" # TODO add targets
+    targets="", # TODO add targets
   shell: """
     Rscript {workflow.basedir}/scripts/plot_feature.R \
       {params.targets} \
@@ -151,11 +160,12 @@ rule plot_stats_sn_summary:
 
 rule plot_feature_summary:
   input: join_path("results/merged_lof.tsv"),
-  output: pdf=join_path("plots/{ANALYSIS}/feature_summary.pdf"),
-          rds=join_path("plots/{ANALYSIS}/feature_summary.rds"),
-  log: join_path("logs/plot/{ANALYSIS}/feature_summary.log"),
+  output: pdf=join_path("plots/{ANALYSIS}/feature_summary/neighbors~{neighbors}_contamination~{contamination}.pdf"),
+          rds=join_path("plots/{ANALYSIS}/feature_summary/neighbors~{neighbors}_contamination~{contamination}.rds"),
+  log: join_path("logs/plot/{ANALYSIS}/feature_summary/neighbors~{neighbors}_contamination~{contamination}.log"),
   shell: """
     Rscript {workflow.basedir}/scripts/plot_feature_summary.R \
+      --lof_params {wildcards.neighbors}:{wildcards.contamination} \
       --output {output.pdf} \
       {input} \
       2> {log}

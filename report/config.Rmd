@@ -1,15 +1,18 @@
 ## Modifications {.tabset}
 
-### Regions: All
-
 Distribution of known RNA modifications:
+<!-- TODO covered modifications -->
 
-```{r, fig-mod-summary}
-readRDS("../plots/mod_summary.rds") %>%
+### Regions: All
+```{r, fig-mods-summary}
+readRDS("../plots/mods/summary.rds") %>%
   print()
 ```
 
-<!-- TODO covered modifications -->
-<!-- TODO total and per region -->
-
-
+{% for region in PRONTO["regions"] %}
+### {{region}}
+```{r, fig-mods-{{region}}}
+readRDS("../plots/mods/{{region}}.rds") %>%
+  print()
+```
+{% endfor %}

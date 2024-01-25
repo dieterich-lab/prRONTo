@@ -4,7 +4,7 @@ sample_table: sample_table.tsv
 project: "HCT116 WT vs. WBSCR22 MUT"
 
 pronto:
-  output_dir: output
+  output_dir: output_test
   ref: ../../data/human/human_rrna.fasta
   mods: ../../data/human/human_rrna_mods.tsv
   regions: ["NR_003286_RNA18SN5", ]

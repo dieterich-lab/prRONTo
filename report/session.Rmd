@@ -1,30 +1,45 @@
-## Session
-
-### Software
-
-* [JACUSA2 v2.0.1](https://github.com/dieterich-lab/JACUSA2)
-* [JACUSA2helper v1.99](https://github.com/dieterich-lab/JACUSA2helper)
-* [prRONTo v0.9](https://github.com/dieterich-lab/prRONTo)
+## Session {.tabset}
 
 ### Config
 
-Reference FASTA
-: `r params$pronto$ref`
+#### Reference FASTA
+Filename: {{PRONTO["ref"]}} \
+MD5: {{md5["ref"]}}
 
-Modifications
-: `r params$pronto$mods`
+#### Modifications
+Filename: {{PRONTO["mods"]}} \
+MD5: {{md5["mods"]}}
 
-Regions
-: `r params$pronto$regions`
+#### Regions
+{{",".join(PRONTO["regions"])}}
 
-Targets:
-: `r paste(params$pronto$targets, sep = ", ")`
+{% if PRONTO["targets"] %}
+#### Targets
+{{",".join(PRONTO["targets"])}}
+{% endif %}
 
-Config file:
-: `r paste(params$meta$configfile, sep = ", ")`
+#### Workdir
+Directory: {{meta["workdir"]}}
 
-PEP file:
-: `r paste0(params$meta$workdir, "/", params$meta$pepfile)`
+#### Config file
+Filename: {{meta["configfile"][0]}} \
+MD5: {{md5["configfile"]}}
+```
+{{meta["configfile"][0] | read_yaml | to_yaml}}
+```
+
+#### PEP file
+Filename: {{meta["pepfile"]}} \
+MD5: {{md5["pepfile"]}} \
+```
+{{meta["pepfile"] | read_yaml | to_yaml}}
+```
 
 Output
 : `r paste0(params$meta$workdir, "/", params$meta$output)`
+
+### Software
+* [JACUSA2 {{VERSIONS["JACUSA2"]}}](https://github.com/dieterich-lab/JACUSA2)
+* [JACUSA2helper {{VERSIONS["JACUSA2helper"]}}](https://github.com/dieterich-lab/JACUSA2helper)
+* [prRONTo {{VERSIONS["prRONTo"]}}](https://github.com/dieterich-lab/prRONTo)
+

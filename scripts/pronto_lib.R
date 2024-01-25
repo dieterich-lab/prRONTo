@@ -58,3 +58,18 @@ debug_opts <- function(option_list, args) {
   opts
 }
 
+guess_features <- function(df) {
+  grep("^lof_outlier_", colnames(df), value = TRUE) %>%
+    gsub("^lof_outlier_", "", .)
+}
+
+
+# from https://joshuacook.netlify.app/post/integer-values-ggplot-axis/
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}

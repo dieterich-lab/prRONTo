@@ -17,10 +17,6 @@ option_list <- list(
   optparse::make_option(c("-t", "--targets"),
                         type = "character",
                         help = "','-separted list of targets, e.g.: 18S:20[-22]"),
-  optparse::make_option(c("-n", "--neighboor"),
-                        type = "integer",
-                        default = 0,
-                        help = "Distance to known mod up/downstream"),
   optparse::make_option(c("-o", "--output"),
                         type = "character",
                         help = "Output")
@@ -39,13 +35,18 @@ feature_col <- paste0("feature_", feature)
 lof_outlier_col <- paste0("lof_outlier_", feature)
 
 result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
-  dplyr::mutate(is_outlier = dplyr::case_when(.data[[lof_outlier_col]] == 1 ~ TRUE, .default = FALSE),
-                label = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ paste(pos, "(", mod, ")"),
-                                         is_modified == 0 & is_outlier == 1 ~ as.character(pos)),
-                outlier_type = dplyr::case_when(is_modified == 1 & is_outlier == 1 ~ "known modification",
-                                                is_modified == 0 & is_outlier == 1 ~ "unknown",
-                                                is_in_neighborhood == 1 & is_outlier == 1 ~ "modification in vicinity",
-                                                .default = "inlier")) %>%
+  dplyr::mutate(
+    is_outlier = dplyr::case_when(
+      .data[[lof_outlier_col]] == 1 ~ TRUE,
+      .default = FALSE),
+    label = dplyr::case_when(
+      is_modified == 1 & is_outlier == TRUE ~ paste(pos, "(", mod, ")"),
+      is_modified == 0 & is_outlier == TRUE ~ as.character(pos)),
+    outlier_type = dplyr::case_when(
+      is_modified == 1 & is_outlier == TRUE ~ "known modification",
+      is_modified == 0 & is_in_neighborhood == "" & is_outlier == TRUE ~ "unknown",
+      is_modified == 0 & is_in_neighborhood != "" & is_outlier == TRUE ~ "modification in vicinity",
+      .default = "inlier")) %>%
   split(.$seqnames)
 
 # * targets
@@ -87,7 +88,7 @@ for (seq_id in names(result)) {
   if (nrow(outlier) > 0) {
     tbl <- outlier %>%
       dplyr::mutate(coords = paste0(seqnames, ":", pos)) %>%
-      dplyr::select(coords, mod, dplyr::all_of(feature_col)) %>%
+      dplyr::select(coords, mod, dplyr::all_of(feature_col), is_in_neighborhood) %>%
       ggpubr::ggtexttable(rows = c(),
                           cols = c("", tail(colnames(.), n = -1)))
   }

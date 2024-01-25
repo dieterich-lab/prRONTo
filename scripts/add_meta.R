@@ -50,18 +50,30 @@ add_targets <- function(result, targets) {
       plyranges::join_overlap(targets)})
 }
 
-# TODO test - FIX outlier and is_in_neighborhood
+# TODO test
 add_neighborhood <- function(result, mods, neighborhood) {
-  mods <- mods %>%
-    IRanges::resize(width = 2 * neighborhood + 1, fix = "center")
-  GenomicRanges::mcols(df) <- NULL
-  mods <- mods %>%
-    plyranges::mutate(is_in_neighborhood = 1)
+  region <- result
+  GenomicRanges::mcols(region) <- NULL
 
-  suppressWarnings({
-    result %>%
-      plyranges::join_overlap_left(mods) %>%
-      plyranges::mutate(is_in_neighborhood = tidyr::replace_na(is_in_neighborhood, 0))})
+  region <- region %>%
+    plyranges::mutate(site = as.character(result), site_pos = start) %>%
+    IRanges::resize(width = 2 * neighborhood + 1, fix = "center") %>%
+    plyranges::find_overlaps(mods) %>%
+    plyranges::filter(site_pos != mod_pos) %>%
+    plyranges::mutate(mod = paste0(mod_pos, ":", mod)) %>%
+    plyranges::select(site, mod) %>%
+    GenomicRanges::mcols() %>%
+    as.data.frame() %>%
+    dplyr::group_by(site) %>%
+    dplyr::mutate(mods = unique(mod) %>% paste0(collapse = ",")) %>%
+    dplyr::select(site, mods) %>%
+    dplyr::distinct() %>%
+    dplyr::rename(is_in_neighborhood = mods) %>%
+    tidyr::separate(col = site, into = c("seqnames", "start"), sep = ":") %>%
+    dplyr::mutate(end = start) %>%
+    GenomicRanges::GRanges()
+
+  plyranges::join_overlap_left(result, region)
 }
 
 add_ref_context <- function(result, fasta_fname, context) {
@@ -82,9 +94,8 @@ get_mods <- function(mods_fname) {
   data.table::fread(mods_fname, header = TRUE) %>%
     as.data.frame() %>%
     dplyr::rename(seqnames = seq_id, start = pos) %>%
-    dplyr::mutate(end = start) %>%
-    GenomicRanges::GRanges() %>%
-    IRanges::shift(1)
+    dplyr::mutate(start = start + 1, end = start, mod_pos = start) %>%
+    GenomicRanges::GRanges()
 }
 
 add_mods <- function(result, mods) {
@@ -100,7 +111,6 @@ result <- read.table(opts$args, sep = "\t", header = TRUE) %>%
   GenomicRanges::GRanges()
 
 GenomicRanges::mcols(result)["is_modified"] <- 0
- GenomicRanges::mcols(result)["is_in_neighborhood"] <- 0
 if (!is.null(opts$options$mods)) {
   opt_cols <- c(opt_cols, "mod")
 
@@ -113,7 +123,11 @@ if (!is.null(opts$options$mods)) {
   if (!is.null(opts$options$neighborhood)) {
     opt_cols <- c(opt_cols, "is_in_neighborhood")
     result <- add_neighborhood(result, mods, opts$options$neighborhood)
+  } else {
+    GenomicRanges::mcols(result)["is_in_neighborhood"] <- NA
   }
+} else {
+  GenomicRanges::mcols(result)["is_in_neighborhood"] <- NA
 }
 
 if (!is.null(opts$options$fasta)) {

@@ -3,6 +3,7 @@ title: "`r params$doc_title`"
 author: "prRONTo"
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
@@ -15,16 +16,16 @@ htmltools::img(src = "{{ basedir }}/report/lab_logo.png",
 ```
 </a>
 
-# <a href="https://github.com/dieterich-lab/prRONT" target="_blank">prRONTo</a>
+<h1><a href="https://github.com/dieterich-lab/prRONT" target="_blank">prRONTo</a></h1>
 
 <br/>
 <br/>
 
 {% if "project" in pep.config %}
-### Project: {{ pep.config["project"] }}
+<h3> Project: {{ pep.config["project"] }}</h3>
 {% endif %}
-#### Conditions: {{ PRONTO["condition1"] }} vs. {{ PRONTO["condition2"] }}
-#### Report created: `r format(Sys.time(), format = "%Y-%m-%d %H:%M")`
+<h3> Conditions: {{ PRONTO["condition1"] }} vs. {{ PRONTO["condition2"] }}</h3>
+<h4> Report created: `r format(Sys.time(), format = "%Y-%m-%d %H:%M")`</h4>
 
 # {.tabset}
 

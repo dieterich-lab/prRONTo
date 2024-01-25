@@ -17,12 +17,14 @@ rule meta_add:
          mods=MODS,
   output: temp(join_path("results/{ANALYSIS}/jacusa2/{bam_prefix}/{comparison}_meta.tsv")),
   log: join_path("logs/{ANALYSIS}/add_meta/{bam_prefix}/{comparison}.log"),
-  params: context=get_max_context()
+  params: context=get_max_context(),
+          neighborhood=config["neighborhood"],
   shell: """
     Rscript {workflow.basedir}/scripts/add_meta.R \
         --output {output} \
         --mods {input.mods} \
         --fasta {input.ref} \
+        --neighborhood {params.neighborhood} \
         --context {params.context} \
         {input.scores} \
         2> {log}

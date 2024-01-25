@@ -4,14 +4,14 @@
 
 #### Regions: All
 
-##### Original
+<h3>Preprocessed</h3>
 
 ```{r, fig-read-summary-total}
 readRDS("../plots/read_summary/total_data.rds") %>%
   print()
 ```
 
-##### Sequence IDs
+<h3>Sequence IDs</h3>
 
 ```{r, fig-read-summary-total-seq-ids}
 readRDS("../plots/read_summary/total_seq_ids.rds") %>%
@@ -19,7 +19,7 @@ readRDS("../plots/read_summary/total_seq_ids.rds") %>%
 ```
 
 {% if "downsampling" in config %}
-##### Downsampling
+<h3>Downsampling</h3>
 
 ```{r, fig-read-summary-downsampling}
 readRDS("../plots/read_summary/total_downsampling.rds") %>%
@@ -30,14 +30,14 @@ readRDS("../plots/read_summary/total_downsampling.rds") %>%
 {% for region in PRONTO["regions"] %}
 #### {{region}}
 
-##### Downsampling
+<h3>Preprocessed</h3>
 
 ```{r, fig-read-summary-{{region}}}
 readRDS("../plots/read_summary/{{region}}_data.rds") %>%
   print()
 ```
 {% if "downsampling" in config %}
-##### Downsampling
+<h3>Downsampling</h3>
 
 ```{r, fig-read-summary-{{region}}-downsampling}
 readRDS("../plots/read_summary/{{region}}_downsampling.rds") %>%

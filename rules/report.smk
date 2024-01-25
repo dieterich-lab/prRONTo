@@ -20,35 +20,50 @@ rule report_render:
   """
 
 
+def report_template_run(input, output):
+  with open(input["yaml"], "r") as f:
+    params = yaml.safe_load(f)
+    parse_template(input["rmd"], params, output)
+
+
 rule report_template:
-  input: rmd=f"{workflow.basedir}/report/report.Rmd",
-  output: join_path("report/report.Rmd")
-  params:
-    config=dict(config),
-    PRONTO=dict(PRONTO),
-    pep=pep,
-    basedir=workflow.basedir
-  run:
-    parse_template(input, params, output)
+  input: rmd=f"{workflow.basedir}/report/{{template}}.Rmd",
+         yaml=join_path("report/params.yaml"),
+  output: join_path("report/{template}.Rmd")
+  run: report_template_run(input, output)
+
+
+def mods_rdfs():
+  fnames = [join_path("plots/mods/summary.rds"), ]
+  for region in PRONTO["regions"]:
+    fnames.append(join_path(f"plots/mods/{region}.rds"))
+
+  return fnames
 
 
 rule report_config_template:
   input: rmd=f"{workflow.basedir}/report/config.Rmd",
-         rds=[join_path("plots/mod_summary.rds"), ],
+         yaml=join_path("report/params.yaml"),
+         rds=mods_rdfs(),
   output: join_path("report/config.Rmd")
-  params:
-    config=dict(config),
-    PRONTO=dict(PRONTO),
-    basedir=workflow.basedir
-  run:
-    parse_template(input, params, output)
+  run: report_template_run(input, output)
+
+
+def read_yaml(fname):
+  with open(fname, "r") as f:
+    return yaml.safe_load(f)
 
 
 def parse_template(input, params, output):
   mapping = dict(params)
 
-  with open(input["rmd"], "r") as in_file:
+  with open(input, "r") as in_file:
     s = in_file.read()
+    jinja2.filters.FILTERS.update(
+        {
+          "read_yaml": read_yaml,
+          "to_yaml": yaml.dump,
+         })
     t = jinja2.Template(s)
     r = t.render(**mapping)
     with open(output[0], "w") as out_file:
@@ -57,57 +72,54 @@ def parse_template(input, params, output):
 
 rule report_read_summary_template:
   input: rmd=f"{workflow.basedir}/report/read_summary.Rmd",
+         yaml=join_path("report/params.yaml"),
          regions=REGIONS,
          rds=read_summary_rdfs,
   output: join_path("report/read_summary.Rmd")
-  params:
-    config=dict(config),
-    PRONTO=dict(PRONTO),
-    basedir=workflow.basedir
-  run:
-    parse_template(input, params, output)
+  run: report_template_run(input, output)
 
+
+def feature_summary_plots():
+  fnames = []
+  for lof in config["lof"]:
+    neighbors = lof["neighbors"]
+    contamination = lof["contamination"]
+    fnames.append(join_path(f"plots/original/feature_summary/neighbors~{neighbors}_contamination~{contamination}.rds"))
+
+  return fnames
 
 # FIXME rds **
 # path and expand (ANALYSIS, bam_prefix, neighbors, contamination, comparison, feature, seq_id, suffix
 rule report_feature_summary_template:
   input: rmd=f"{workflow.basedir}/report/feature_summary.Rmd",
-         rds=[original_feature_plots()] +
-             [downsampling_feature_plots()] +
-             [downsampling_summary_plots()] +
-             [join_path("plots/original/feature_summary.rds"), ]
+         yaml=join_path("report/params.yaml"),
+         rds=[original_feature_plots()] + [downsampling_feature_plots()] + [downsampling_summary_plots()] + [feature_summary_plots()]
   output: join_path("report/feature_summary.Rmd")
-  params:
-    config=dict(config),
-    PRONTO=dict(PRONTO),
-    basedir=workflow.basedir
-  run:
-    parse_template(input, params, output)
-
-
-rule report_session_template:
-  input: rmd=f"{workflow.basedir}/report/session.Rmd",
-  output: join_path("report/session.Rmd")
-  params:
-    config=dict(config),
-    PRONTO=dict(PRONTO),
-    basedir=workflow.basedir
-  run:
-    parse_template(input, params, output)
+  run: report_template_run(input, output)
 
 
 rule report_create_params:
+  input: md5_pepfile=config["pepfile"] + ".md5",
+         md5_ref=PRONTO["ref"] + ".md5",
+         md5_mods=PRONTO["mods"] + ".md5",
+         md5_configfile=workflow.configfiles[0] + ".md5",
   output: join_path("report/params.yaml")
   params:
     config=config,
     PRONTO=dict(PRONTO),
-    basedir=workflow.basedir
-  run:
-    d = dict(params)
-    d["meta"] = {
+    basedir=workflow.basedir,
+    VERSIONS=VERSIONS,
+    pep=pep.to_dict(),
+    meta = {
       "configfile": workflow.configfiles,
       "pepfile": config["pepfile"],
-      "workdir": os.getcwd(),
-    }
+      "workdir": os.getcwd(),},
+  run:
+    d = dict(params)
+    d["md5"] = {}
+    for key, fname in input.items():
+      if key.startswith("md5"):
+        with open(fname, "r") as f:
+          d["md5"][key.replace("md5_", "")] = f.read().strip()
     with open(output[0], "w") as f:
-       yaml.safe_dump(d, f)
+      yaml.safe_dump(d, f)

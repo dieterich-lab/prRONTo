@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 from snakemake.shell import shell
 
 wildcard_constraints:
@@ -12,6 +13,36 @@ ruleorder: plot_stats_sn_summary > plot_stats_section_summary
 SAMPLES = pep.sample_table
 PRONTO = pep.config.pronto
 CONDITIONS = [PRONTO["condition1"], PRONTO["condition2"]]
+
+
+def get_jacusa2_version():
+  v = "unknown"
+  try:
+    result = subprocess.run(["jacusa2", "-v"], stdout=subprocess.PIPE)
+    v = result.stdout.decode().strip()
+  except:
+    pass
+
+  return v
+
+
+def get_jacusa2helper_version():
+  v = "unknown"
+  try:
+    result = subprocess.run(["R", "--vanilla", "-s", "-e", 'cat(as.character(packageVersion("JACUSA2helper")))'], stdout=subprocess.PIPE)
+
+    v = result.stdout.decode().strip()
+  except:
+    pass
+
+  return v
+
+
+VERSIONS = {
+  "JACUSA2": get_jacusa2_version(),
+  "JACUSA2helper": get_jacusa2helper_version(),
+  "prRONTo": "0.92",
+}
 
 
 def get_replicates(index):
@@ -102,10 +133,10 @@ def auto_targets():
   targets.append(join_path("results/samtools/stats/merged_SN.tsv"))
   # FIXME targets.append(join_path("results/plots/read_length_summary.pdf"))
 
-  targets.append(join_path("plots/mod_summary.pdf"))
+  # targets.append(join_path("plots/mod_summary.pdf"))
   targets.append(join_path("plots/read_summary/total.pdf"))
   targets.append(join_path("plots/feature_lof_summary.pdf"))
-  targets.append(join_path("plots/original/feature_summary.pdf"))
+  #  targets.append(join_path("plots/original/feature_summary.pdf"))
   targets.append(join_path("report/report.html"))
 
   return targets
@@ -294,3 +325,10 @@ rule merge_lof_results:
     dfs = [helper(fname) for fname in input]
     df = pd.concat(dfs, ignore_index=True)
     df.to_csv(output[0], sep="\t", index=False)
+
+rule calc_md5:
+  input: "{file}"
+  output: "{file}.md5"
+  shell: """
+    md5sum {input} | cut -c -32 > {output}
+  """
