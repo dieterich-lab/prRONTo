@@ -5,7 +5,8 @@ prRONTo - precise rRNA modification analysis on ONTechnoligies
 for comprehensive identification of diverse ribosomal RNA modifications
  by targeted nanopore direct RNA sequencing and JACUSA2.
 
-See original publication for details [DOI: 10.1080/15476286.2023.2248752](https://www.tandfonline.com/doi/full/10.1080/15476286.2023.2248752)
+See original publication for details [DOI: 10.1080/15476286.2023.2248752](https://www.tandfonline.com/doi/full/10.1080/15476286.2023.2248752).
+Please cite this publication if you use prRONTo in your work.
 
 # Installation
 
