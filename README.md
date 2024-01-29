@@ -17,7 +17,7 @@ git clone https://github.com/dieterich-lab/prRONTo
 cd prRONTo
 ```
 
-We recommend to use [Conda](https://conda.io) to install the required packages.
+We recommend to use [Conda](https://conda.io) or for faster dependecy resolving [Mamba](https://github.com/mamba-org/mamba) to install the required packages.
 
 ## Requirements
 
@@ -33,13 +33,21 @@ conda env create -n pronto -f conda.yaml
 conda activate pronto
 ```
 
+For faster dependecy resolving, we highly recommend to use [Mamba](https://github.com/mamba-org/mamba). Refer to [Mamba Installation](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) to setup an mamba instance and install required dependencies with:
+```
+mamba env create -n pronto -f conda.yaml
+mamba activate pronto
+```
+
+
+
 # Usage
 
 A a sample description via a [PEP](https://pep.databio.org/en/2.0.0) file and a sample table is required.
 Furthermore, the reference FASTA and a customized RNA modification file corresponding to the sequencing data is required.
 
 ```
-snakemake -c 1 --snakefile <SNAKEFILE> --config pep=<PEPFILE> [--configfile=<CONFIG_FILE>]
+snakemake -c 1 --snakefile <SNAKEFILE> --config pepfile=<PEPFILE> [--configfile=<CONFIG_FILE>]
 ```
 The `<CONFIG_FILE>` defines and adjusts parameters of the analysis whereas the `<PEPFILE>` is entirely sample specific.
 

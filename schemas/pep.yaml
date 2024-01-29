@@ -47,7 +47,7 @@ properties:
         required:
           - condition1
           - condition2
-          - output
+          - output_dir
           - ref
           - mods
           - regions

@@ -88,6 +88,5 @@ if (length(features) == 1) {
                set_sizes = FALSE) +
             theme(legend.position = "bottom")
 }
-# TODO -> feature, LOFs
 
 save_plot(p, opts$options$output, "pdf")
