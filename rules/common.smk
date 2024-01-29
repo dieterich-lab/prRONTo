@@ -11,7 +11,7 @@ ruleorder: plot_stats_sn_summary > plot_stats_section_summary
 
 
 SAMPLES = pep.sample_table
-PRONTO = pep.config.pronto
+PRONTO = pep.config["pronto"]
 CONDITIONS = [PRONTO["condition1"], PRONTO["condition2"]]
 
 
