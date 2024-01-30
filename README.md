@@ -10,7 +10,7 @@ Please cite this publication if you use prRONTo in your work.
 
 # Installation
 
-Chekout the repository and install required packages (see `conda.yaml`).
+Chekout the repository and install required packages (see `conda-lock.yaml`).
 
 ```
 git clone https://github.com/dieterich-lab/prRONTo
@@ -29,13 +29,13 @@ detect RNA modifications and a collection of
 
 Required dependencies can be installed via [Conda](https://conda.io):
 ```
-conda env create -n pronto -f conda.yaml
+conda env create -n pronto -f conda-lock.yaml
 conda activate pronto
 ```
 
 For faster dependecy resolving, we highly recommend to use [Mamba](https://github.com/mamba-org/mamba). Refer to [Mamba Installation](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) to setup an mamba instance and install required dependencies with:
 ```
-mamba env create -n pronto -f conda.yaml
+mamba env create -n pronto -f conda-lock.yaml
 mamba activate pronto
 ```
 
@@ -165,7 +165,7 @@ In the following, a chain of commands to run a toy example:
 
 1. Clone repository: `git clone https://github.com/dieterich-lab/prRONTo`
 2. `cd prRONTo`
-3. Install conda env.: `conda env create -n pronto -f conda.yaml`
+3. Install conda env.: `conda env create -n pronto -f conda-lock.yaml`
 4. Activate conda env.: `conda activate pronto`
 5. Run prRONTo: `cd example/human ; run_exampe.sh``
 6. Open `output/report/report.html`with your favorite browser and check the results.
