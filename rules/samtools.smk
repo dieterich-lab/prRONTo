@@ -33,7 +33,10 @@ rule samtools_downsample_bam:
     read_count = sum(df["numreads"])
     fraction = round(int(wildcards.reads) / read_count, 3)
     if fraction > 1:
-      raise Exception("target reads > actual reads")
+      msg = f"Error in config. Downsampling for {wildcards.filename}: target reads > actual reads\n"
+      with open(log[0], "w") as logfile:
+        logfile.write(msg)
+      raise Exception(msg)
     cmd = f"samtools view --subsample {fraction} --subsample-seed {wildcards.seed} " + "-o {output} {input.bam}"
     shell(cmd + " 2> {log}")
 
