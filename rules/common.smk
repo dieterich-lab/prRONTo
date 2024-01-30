@@ -143,8 +143,8 @@ def auto_targets():
 
 
 rule include_fasta:
-  input: PRONTO.ref
-  output: REF_FASTA
+  input: PRONTO["ref"],
+  output: REF_FASTA,
   params:
     include="copy" # FIXME include=config.get("include", {}).get("ref")
   run:
@@ -157,7 +157,7 @@ rule include_fasta:
 
 
 rule include_mods:
-  input: PRONTO.mods
+  input: PRONTO["mods"],
   output: MODS
   params:
     include="copy" # FIXME
@@ -197,7 +197,7 @@ for condition in [1, 2]:
 rule create_regions:
   output: REGIONS
   params:
-    regions=PRONTO.regions
+    regions=PRONTO["regions"]
   run:
       with open(output[0], "w") as f:
         for region in set(params.regions):
