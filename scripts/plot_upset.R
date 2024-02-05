@@ -47,46 +47,64 @@ lof_params <- strsplit(opts$options$lof_params, ",") %>%
   dplyr::rename(neighbors = "V1", contamination = "V2") %>%
   transform(neighbors = as.numeric(neighbors), contamination = as.numeric(contamination))
 
-if (length(features) == 1) {
-  cols <- c("is_outlier", "is_modified", "is_target", "is_in_neighborhood", "mod")
-  outlier_col <- paste0("lof_outlier_", features)
-  df$is_outlier <- 0
-  df[df[, outlier_col] == 1, "is_outlier"] <- 1
-  parameters <- rev(unique(df$parameters))
-  filtered <- df %>%
-    dplyr::filter(is_outlier == 1, lof_neighbors == lof_params$neighbors, lof_contamination == lof_params$contamination) %>%
-    dplyr::select(seqnames, pos, strand, parameters, dplyr::all_of(cols)) %>%
-    dplyr::mutate(value = TRUE) %>%
-    tidyr::pivot_wider(id_cols = c(seqnames, pos, strand, is_modified, mod, is_target, is_in_neighborhood),
-                       names_from = parameters,
-                       values_from = value,
-                       values_fill = FALSE)
-    filtered$outlier_type <- ifelse(filtered$is_modified, "known modification",
-                                    ifelse(filtered$is_in_neighborhood != "", "modification in vicinity",
-                                   "unknown"))
-    filtered$label <- ifelse(filtered$is_modified,
-                             paste0(filtered$pos, "\n(", filtered$mod, ")"),
-                             ifelse(filtered$is_in_neighborhood != "",
-                                    paste0(filtered$pos, "\n{", gsub(",", "\n", filtered$is_in_neighborhood), "}"),
-                                    filtered$pos))
+cols <- c("is_outlier", "is_modified", "is_target", "is_in_neighborhood", "mod")
+outlier_col <- paste0("lof_outlier_", features)
+df$is_outlier <- 0
+df[df[, outlier_col] == 1, "is_outlier"] <- 1
+df$short_parameters <- df$parameters %>%
+  gsub("reads", "r", .) %>%
+  gsub("seed", "s", .)
+short_parameters <- rev(unique(df$short_parameters))
+filtered <- df %>%
+  dplyr::filter(lof_neighbors == lof_params$neighbors,
+                lof_contamination == lof_params$contamination)
 
-    p <- upset(filtered, parameters,
-               name = "runs",
-               base_annotations = list(
-                 "Intersection size" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
-                 geom_text(
-                   mapping = aes(label = label),
-                   position = position_stack(vjust = 0.5),
-                   na.rm = TRUE) +
-                 labs(fill = "outlier type") +
-                 scale_fill_manual(values = c("known modification" = "#66c2a5",
-                                              "unknown" = "#fc8d62",
-                                              "modification in vicinity" = "#8da0cb")) +
-                 scale_y_continuous(breaks = integer_breaks())
-               ),
-               width = 0.1,
-               set_sizes = FALSE) +
-            theme(legend.position = "bottom")
-}
+analysis <- data.frame(set = filtered$short_parameters) %>%
+  dplyr::mutate(label = dplyr::case_match(set,
+                                          "preprocessed" ~ "full data",
+                                          .default = "downsampled data"))
+
+filtered <- filtered %>%
+  dplyr::filter(is_outlier == 1) %>%
+  dplyr::select(seqnames, pos, strand, short_parameters, dplyr::all_of(cols)) %>%
+  dplyr::mutate(value = TRUE) %>%
+  tidyr::pivot_wider(id_cols = c(seqnames, pos, strand, is_modified, mod, is_target, is_in_neighborhood),
+                     names_from = short_parameters,
+                     values_from = value,
+                     values_fill = FALSE)
+  filtered$outlier_type <- ifelse(filtered$is_modified, "known modification",
+                                  ifelse(filtered$is_in_neighborhood != "", "modification in vicinity",
+                                 "unknown"))
+  filtered$label <- ifelse(filtered$is_modified,
+                           paste0(filtered$pos, "\n(", filtered$mod, ")"),
+                           ifelse(filtered$is_in_neighborhood != "",
+                                  paste0(filtered$pos, "\n{", gsub(",", "\n", filtered$is_in_neighborhood), "}"),
+                                  filtered$pos))
+
+  p <- upset(filtered, short_parameters,
+             name = "runs",
+             base_annotations = list(
+               "Identified outlier" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
+               geom_text(
+                 mapping = aes(label = label),
+                 position = position_stack(vjust = 0.5),
+                 na.rm = TRUE) +
+               labs(fill = "outlier type") +
+               scale_fill_manual(values = c("known modification" = "#66c2a5",
+                                            "unknown" = "#fc8d62",
+                                            "modification in vicinity" = "#8da0cb")) +
+               scale_y_continuous(breaks = integer_breaks()) +
+               theme(legend.position = "bottom")
+             ),
+             width = 0.1,
+             set_sizes = FALSE,
+             themes = upset_default_themes(legend.position = "bottom"),
+             stripes = upset_stripes(mapping = aes(color = label),
+                                     geom = geom_segment(size = 4),
+                                     colors= c ("full data" = "lightpink",
+                                              "downsampled data" = "snow3"),
+                                     data = analysis)
+) +
+  ylab("Data (BAM files)") + theme(axis.title.y = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 save_plot(p, opts$options$output, "pdf")

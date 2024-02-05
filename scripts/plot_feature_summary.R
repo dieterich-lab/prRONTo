@@ -39,7 +39,14 @@ outlier_col <- paste0("lof_outlier_", features)
 cols <- c(outlier_col, "is_modified", "is_target", "is_in_neighborhood", "mod")
 short_parameters <- rev(unique(df$short_parameters))
 filtered <- df %>%
-  dplyr::filter(lof_params %in% lof_opts) %>%
+  dplyr::filter(lof_params %in% lof_opts)
+
+analysis <- data.frame(set = filtered$short_parameters) %>%
+  dplyr::mutate(label = dplyr::case_match(set,
+                                          "preprocessed" ~ "full data",
+                                          .default = "downsampled data"))
+
+filtered <- filtered %>%
   dplyr::select(seqnames, pos, strand, short_parameters, dplyr::all_of(cols)) %>%
   tidyr::pivot_longer(cols = dplyr::all_of(outlier_col), names_to = "feature", values_to = "is_outlier") %>%
   dplyr::mutate(feature = gsub("lof_outlier_", "", feature)) %>%
@@ -58,15 +65,11 @@ filtered$label <- ifelse(filtered$is_modified,
                                 paste0(filtered$pos, "\n{", filtered$is_in_neighborhood, "}"),
                                 filtered$pos))
 
-#geom_text(
-#   mapping = aes(label = label),
-#   position = position_stack(vjust = 0.5),
-#   na.rm = TRUE) +
 
 p <- upset(filtered, short_parameters,
-           name = "runs",
+           name = "Identified in data",
            base_annotations = list(
-             "Intersection size" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
+             "Identified outlier" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
              ggfittext::geom_bar_text(
                  mapping = aes(label = label),
                  min.size = 0,
@@ -78,10 +81,16 @@ p <- upset(filtered, short_parameters,
                                           "unknown" = "#fc8d62",
                                           "modification in vicinity" = "#8da0cb")) +
              scale_y_continuous(breaks = integer_breaks()) +
-             facet_grid(feature ~ .) +
-             theme(strip.text.y = element_text(angle = 0),
-                   legend.position = "bottom")
+             facet_grid(feature ~ ., labeller = labeller(feature = label_both))
            ),
            width = 0.1,
-           set_sizes = FALSE)
+           set_sizes = FALSE,
+           themes = upset_default_themes(legend.position = "bottom"),
+           stripes = upset_stripes(mapping = aes(color = label),
+                                   geom = geom_segment(size = 4),
+                                   colors= c ("full data" = "lightpink",
+                                            "downsampled data" = "snow3"),
+                                   data = analysis)
+) +
+  ylab("Data (BAM files)") + theme(axis.title.y = element_text(angle = 90, vjust = 0.5, hjust=1))
 save_plot(p, opts$options$output, "pdf")
