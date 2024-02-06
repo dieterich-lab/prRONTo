@@ -20,7 +20,7 @@ option_list <- list(
                         type = "character",
                         help = "Output")
 )
-args = c(
+args <- c(
          "--features=M",
          "--lof=20:0.001",
          "--output=tmp",
@@ -42,7 +42,8 @@ features <- unlist(strsplit(opts$options$features, ","))
 
 lof_params <- strsplit(opts$options$lof_params, ",") %>%
   unlist() %>%
-  strsplit(":") %>% do.call(rbind, .) %>%
+  strsplit(":") %>%
+  do.call(rbind, .) %>%
   as.data.frame() %>%
   dplyr::rename(neighbors = "V1", contamination = "V2") %>%
   transform(neighbors = as.numeric(neighbors), contamination = as.numeric(contamination))
@@ -82,7 +83,7 @@ filtered <- filtered %>%
                                   filtered$pos))
 
   p <- upset(filtered, short_parameters,
-             name = "runs",
+             name = "Identified in data",
              base_annotations = list(
                "Identified outlier" = intersection_size(counts = FALSE, mapping = aes(fill = outlier_type)) +
                geom_text(
@@ -101,10 +102,11 @@ filtered <- filtered %>%
              themes = upset_default_themes(legend.position = "bottom"),
              stripes = upset_stripes(mapping = aes(color = label),
                                      geom = geom_segment(size = 4),
-                                     colors= c ("full data" = "lightpink",
-                                              "downsampled data" = "snow3"),
+                                     colors = c("full data" = "lightpink",
+                                                "downsampled data" = "snow3"),
                                      data = analysis)
 ) +
-  ylab("Data (BAM files)") + theme(axis.title.y = element_text(angle = 90, vjust = 0.5, hjust=1))
+  ylab("Data (BAM files)") +
+  theme(axis.title.y = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 save_plot(p, opts$options$output, "pdf")

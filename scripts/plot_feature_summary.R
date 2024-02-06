@@ -81,7 +81,7 @@ p <- upset(filtered, short_parameters,
                                           "unknown" = "#fc8d62",
                                           "modification in vicinity" = "#8da0cb")) +
              scale_y_continuous(breaks = integer_breaks()) +
-             facet_grid(feature ~ ., labeller = labeller(feature = label_both))
+             facet_grid(feature ~ ., labeller = labeller(feature = label_both), switch = "y")
            ),
            width = 0.1,
            set_sizes = FALSE,
