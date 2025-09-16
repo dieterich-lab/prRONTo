@@ -64,7 +64,7 @@ project: "Example"                # OPTIONAL, plain text, no special characters
 
 pronto:
   regions: ["region1", "region2"] # REQUIRED, list of seqnames to scan for modifications
-  output: <OUTPUT_DIRECTOR>       # REQUIRED, path where results will be written to
+  output_dir: <OUTPUT_DIRECTOR>       # REQUIRED, path where results will be written to
   mods: <MODS_FILE>               # REQUIRED, path to existing modification annotation
   ref: <REF_FASTA>                # REQUIRED, path to reference FASTA
 
@@ -81,7 +81,7 @@ See `example/human/pep.yaml` for an example.
 
 A minimal sample table is provided in the following:
 
-| sample_name | condition  | bam       |
+| sample_name | condition  | filename       |
 | ------------| ---------- | --------- |
 | sample_1_1  | condition1 | <BAM_1_1> |
 | sample_1_2  | condition1 | <BAM_1_2> |
