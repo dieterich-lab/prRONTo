@@ -16,7 +16,7 @@ htmltools::img(src = "{{ basedir }}/report/lab_logo.png",
 ```
 </a>
 
-<h1><a href="https://github.com/dieterich-lab/prRONT" target="_blank">prRONTo</a></h1>
+<h1><a href="https://github.com/dieterich-lab/prRONTo" target="_blank">prRONTo</a></h1>
 
 <br/>
 <br/>
