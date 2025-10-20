@@ -8,7 +8,7 @@ author: "prRONTo"
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-<a href="https://github.com/dieterich-lab/prRONT" target="_blank">
+<a href="https://github.com/dieterich-lab/prRONTo" target="_blank">
 ```{r, echo=FALSE}
 htmltools::img(src = "{{ basedir }}/report/lab_logo.png",
                alt = "logo",
